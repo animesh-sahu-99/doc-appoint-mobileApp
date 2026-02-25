@@ -63,7 +63,8 @@ const HomeScreen = ({ navigation }: any) => {
             </TouchableOpacity>
             <Image
               source={{ uri: 'https://randomuser.me/api/portraits/men/1.jpg' }}
-              className="w-10 h-10 rounded-full border-2 border-white"
+              className="w-10 h-10 rounded-full"
+              style={{ borderWidth: 2, borderColor: 'white' }}
             />
           </View>
         </View>
@@ -85,26 +86,26 @@ const HomeScreen = ({ navigation }: any) => {
 
         {/* Categories */}
         <View className="py-4">
-          <SectionHeader title="Categories" actionText="See all" onAction={() => {}} />
+          <SectionHeader title="Categories" actionText="See all" onAction={() => { }} />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24 }} className="mt-3">
             {CATEGORIES.map((cat) => {
-               const isActive = activeCategory === cat.label;
-               // Determine icon color
-               let iconColor = '#111418';
-               if (isActive) iconColor = 'white';
-               else if (cat.label === 'Cardio') iconColor = '#ef4444';
-               else if (cat.label === 'Vision') iconColor = '#a855f7';
-               else if (cat.label === 'Dentist') iconColor = '#3b82f6';
+              const isActive = activeCategory === cat.label;
+              // Determine icon color
+              let iconColor = '#111418';
+              if (isActive) iconColor = 'white';
+              else if (cat.label === 'Cardio') iconColor = '#ef4444';
+              else if (cat.label === 'Vision') iconColor = '#a855f7';
+              else if (cat.label === 'Dentist') iconColor = '#3b82f6';
 
-               return (
-                  <CategoryChip
-                    key={cat.id}
-                    label={cat.label}
-                    icon={React.cloneElement(cat.icon as React.ReactElement, { color: iconColor })}
-                    isActive={isActive}
-                    onPress={() => setActiveCategory(cat.label)}
-                  />
-               );
+              return (
+                <CategoryChip
+                  key={cat.id}
+                  label={cat.label}
+                  icon={React.cloneElement(cat.icon as React.ReactElement, { color: iconColor })}
+                  isActive={isActive}
+                  onPress={() => setActiveCategory(cat.label)}
+                />
+              );
             })}
           </ScrollView>
         </View>

@@ -4,12 +4,12 @@ import { View, Text } from 'react-native';
 import { Home, Search, Calendar, User } from 'lucide-react-native';
 import { PatientTabParamList } from './types';
 import HomeScreen from '../screens/patient/HomeScreen';
+import PatientScheduleScreen from '../screens/patient/PatientScheduleScreen';
 
 const Tab = createBottomTabNavigator<PatientTabParamList>();
 
 // Placeholders for other screens
 const SearchScreen = () => <View className="flex-1 justify-center items-center bg-white dark:bg-background-dark"><Text className="text-text-primary-light dark:text-text-primary-dark">Search</Text></View>;
-const AppointmentsScreen = () => <View className="flex-1 justify-center items-center bg-white dark:bg-background-dark"><Text className="text-text-primary-light dark:text-text-primary-dark">Appointments</Text></View>;
 const ProfileScreen = () => <View className="flex-1 justify-center items-center bg-white dark:bg-background-dark"><Text className="text-text-primary-light dark:text-text-primary-dark">Profile</Text></View>;
 
 const PatientTabNavigator = () => {
@@ -44,7 +44,7 @@ const PatientTabNavigator = () => {
       />
       <Tab.Screen
         name="Appointments"
-        component={AppointmentsScreen}
+        component={PatientScheduleScreen}
         options={{
           tabBarIcon: ({ color, size }) => <Calendar color={color} size={size} />,
           tabBarLabel: 'Schedule',

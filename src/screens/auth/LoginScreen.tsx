@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useDispatch } from 'react-redux';
@@ -10,12 +10,20 @@ import { storage } from '../../utils/storage';
 import PrimaryButton from '../../components/ui/PrimaryButton';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { useDoctorLoginMutation, usePatientLoginMutation } from '../../services/api';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { AuthStackParamList } from '../../navigation/types';
 
 const LoginScreen = () => {
   const dispatch = useDispatch();
+  const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
   const [role, setUserRole] = useState<UserRole>('PATIENT');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const [patientLogin] = usePatientLoginMutation();
+  const [doctorLogin] = useDoctorLoginMutation();
 
   const { control, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -28,25 +36,41 @@ const LoginScreen = () => {
   const onSubmit = async (data: LoginFormData) => {
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      let response;
+      if (role === 'DOCTOR') {
+        response = await doctorLogin(data).unwrap();
+      } else {
+        response = await patientLogin(data).unwrap();
+      }
 
-      const mockUser = {
-        id: '123',
-        email: data.email,
-        name: role === 'DOCTOR' ? 'Dr. Smith' : 'John Doe',
-      };
-      const mockToken = 'mock-jwt-token';
+      console.log('Login Response:', response);
 
-      await storage.setToken(mockToken);
+      if (response && response.success && response.data) {
+        const { token, userId, email, name } = response.data;
 
-      dispatch(setCredentials({
-        user: mockUser,
-        token: mockToken,
-        role: role,
-      }));
-    } catch (error) {
-      console.error(error);
+        await storage.setToken(token);
+
+        // Build a normalized user object from the flat AuthResponse fields.
+        // doctorId / patientId both map to userId coming from the backend.
+        const userObj = {
+          id: userId,
+          doctorId: role === 'DOCTOR' ? userId : undefined,
+          patientId: role === 'PATIENT' ? userId : undefined,
+          email,
+          name,
+        };
+
+        dispatch(setCredentials({
+          user: userObj,
+          token: token,
+          role: role,
+        }));
+      } else {
+        Alert.alert('Login Failed', response?.message || 'Unexpected error occurred.');
+      }
+    } catch (error: any) {
+      console.error('Login Error:', error);
+      Alert.alert('Login Failed', error?.data?.message || 'Invalid email or password.');
     } finally {
       setLoading(false);
     }
@@ -217,17 +241,19 @@ const LoginScreen = () => {
           {/* Social Login - Placeholder */}
           <View className="pb-6">
             <TouchableOpacity className="w-full h-14 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full flex-row items-center justify-center gap-3 active:bg-gray-50">
-               <Text className="text-gray-700 dark:text-gray-200 font-semibold text-base">
-                 Continue with Google
-               </Text>
+              <Text className="text-gray-700 dark:text-gray-200 font-semibold text-base">
+                Continue with Google
+              </Text>
             </TouchableOpacity>
           </View>
 
           <View className="items-center mb-8">
             <Text className="text-sm text-gray-500 dark:text-gray-400">
               New to MediBook?{' '}
-              <Text className="font-bold text-primary">Create Account</Text>
             </Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+              <Text className="font-bold text-primary mt-1">Create Account</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>

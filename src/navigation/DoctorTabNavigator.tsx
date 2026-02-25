@@ -1,16 +1,14 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, Text } from 'react-native';
-import { LayoutDashboard, Calendar, Users, User } from 'lucide-react-native';
+import { LayoutDashboard, Calendar, ClipboardList, User } from 'lucide-react-native';
 import { DoctorTabParamList } from './types';
 
-const Tab = createBottomTabNavigator<DoctorTabParamList>();
+import DoctorDashboardScreen from '../screens/doctor/DoctorDashboardScreen';
+import DoctorScheduleScreen from '../screens/doctor/DoctorScheduleScreen';
+import DoctorAppointmentsScreen from '../screens/doctor/DoctorAppointmentsScreen';
+import DoctorProfileScreen from '../screens/doctor/DoctorProfileScreen';
 
-// Placeholders
-const DashboardScreen = () => <View className="flex-1 justify-center items-center bg-white dark:bg-background-dark"><Text className="text-text-primary-light dark:text-text-primary-dark">Doctor Dashboard</Text></View>;
-const ScheduleScreen = () => <View className="flex-1 justify-center items-center bg-white dark:bg-background-dark"><Text className="text-text-primary-light dark:text-text-primary-dark">Schedule</Text></View>;
-const PatientsScreen = () => <View className="flex-1 justify-center items-center bg-white dark:bg-background-dark"><Text className="text-text-primary-light dark:text-text-primary-dark">Patients</Text></View>;
-const DoctorProfileScreen = () => <View className="flex-1 justify-center items-center bg-white dark:bg-background-dark"><Text className="text-text-primary-light dark:text-text-primary-dark">Profile</Text></View>;
+const Tab = createBottomTabNavigator<DoctorTabParamList>();
 
 const DoctorTabNavigator = () => {
   return (
@@ -20,22 +18,29 @@ const DoctorTabNavigator = () => {
         tabBarStyle: {
           backgroundColor: '#ffffff',
           borderTopColor: '#f0f2f4',
+          height: 64,
+          paddingBottom: 10,
+          paddingTop: 6,
         },
         tabBarActiveTintColor: '#186be7',
         tabBarInactiveTintColor: '#94a3b8',
+        tabBarLabelStyle: {
+          fontSize: 10,
+          fontWeight: '700',
+        },
       }}
     >
       <Tab.Screen
         name="Dashboard"
-        component={DashboardScreen}
+        component={DoctorDashboardScreen}
         options={{
           tabBarIcon: ({ color, size }) => <LayoutDashboard color={color} size={size} />,
-          tabBarLabel: 'Dashboard',
+          tabBarLabel: 'Home',
         }}
       />
       <Tab.Screen
         name="Schedule"
-        component={ScheduleScreen}
+        component={DoctorScheduleScreen}
         options={{
           tabBarIcon: ({ color, size }) => <Calendar color={color} size={size} />,
           tabBarLabel: 'Schedule',
@@ -43,10 +48,10 @@ const DoctorTabNavigator = () => {
       />
       <Tab.Screen
         name="Patients"
-        component={PatientsScreen}
+        component={DoctorAppointmentsScreen}
         options={{
-          tabBarIcon: ({ color, size }) => <Users color={color} size={size} />,
-          tabBarLabel: 'Patients',
+          tabBarIcon: ({ color, size }) => <ClipboardList color={color} size={size} />,
+          tabBarLabel: 'Appointments',
         }}
       />
       <Tab.Screen
