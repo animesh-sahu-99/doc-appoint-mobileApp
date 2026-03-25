@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
     View,
     Text,
@@ -91,6 +91,7 @@ export default function DoctorAppointmentDetailsScreen({ route, navigation }: an
     const [cancelAppt, { isLoading: isCancelling }] = useCancelAppointmentMutation();
     const [noShowAppt, { isLoading: isNoShowing }] = useNoShowAppointmentMutation();
 
+    const [showAllHistory, setShowAllHistory] = useState(false);
     const isMutating = isConfirming || isCompleting || isCancelling || isNoShowing;
 
     const handleMutation = (
@@ -249,7 +250,7 @@ export default function DoctorAppointmentDetailsScreen({ route, navigation }: an
                         <Text style={{ color: '#64748b', fontSize: 13 }}>No past appointments found.</Text>
                     ) : (
                         <View style={{ gap: 12 }}>
-                            {history.slice(0, 5).map((appt) => {
+                            {(showAllHistory ? history : history.slice(0, 5)).map((appt) => {
                                 const hCfg = STATUS_CONFIG[appt.status] ?? STATUS_CONFIG.PENDING;
                                 return (
                                     <View key={appt.appointmentId} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' }}>
@@ -258,6 +259,11 @@ export default function DoctorAppointmentDetailsScreen({ route, navigation }: an
                                             <Text style={{ color: '#334155', fontSize: 14, fontWeight: '600' }}>
                                                 {formatDate(appt.appointmentDate)}
                                             </Text>
+                                            {appt.startTime ? (
+                                                <Text style={{ color: '#94a3b8', fontSize: 12, fontWeight: '500', marginTop: 2 }}>
+                                                    🕐 {formatTime(appt.startTime)} – {formatTime(appt.endTime)}
+                                                </Text>
+                                            ) : null}
                                             <Text style={{ color: '#64748b', fontSize: 12, marginTop: 2 }} numberOfLines={1}>
                                                 {appt.reasonForVisit || appt.doctorName}
                                             </Text>
@@ -269,9 +275,16 @@ export default function DoctorAppointmentDetailsScreen({ route, navigation }: an
                                 );
                             })}
                             {history.length > 5 && (
-                                <Text style={{ color: '#94a3b8', fontSize: 12, textAlign: 'center', marginTop: 8 }}>
-                                    + {history.length - 5} more appointments
-                                </Text>
+                                <TouchableOpacity
+                                    onPress={() => setShowAllHistory(prev => !prev)}
+                                    style={{ alignItems: 'center', paddingVertical: 10, marginTop: 4, backgroundColor: '#f8fafc', borderRadius: 10 }}
+                                >
+                                    <Text style={{ color: colors.primary, fontSize: 13, fontWeight: '700' }}>
+                                        {showAllHistory
+                                            ? '▲ Show less'
+                                            : `▼ Show ${history.length - 5} more appointments`}
+                                    </Text>
+                                </TouchableOpacity>
                             )}
                         </View>
                     )}
