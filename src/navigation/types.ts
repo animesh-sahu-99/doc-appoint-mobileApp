@@ -16,7 +16,6 @@ export type DoctorTabParamList = {
     Dashboard: undefined;
     Schedule: undefined;
     Patients: undefined;
-    Notifications: undefined;
     Profile: undefined;
 };
 
