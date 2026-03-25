@@ -1,12 +1,13 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { LayoutDashboard, Calendar, ClipboardList, User } from 'lucide-react-native';
+import { LayoutDashboard, Calendar, ClipboardList, Bell, User } from 'lucide-react-native';
 import { DoctorTabParamList } from './types';
 
 import DoctorDashboardScreen from '../screens/doctor/DoctorDashboardScreen';
 import DoctorScheduleScreen from '../screens/doctor/DoctorScheduleScreen';
 import DoctorAppointmentsScreen from '../screens/doctor/DoctorAppointmentsScreen';
 import DoctorProfileScreen from '../screens/doctor/DoctorProfileScreen';
+import NotificationsScreen from '../screens/common/NotificationsScreen';
 
 const Tab = createBottomTabNavigator<DoctorTabParamList>();
 
@@ -52,6 +53,14 @@ const DoctorTabNavigator = () => {
         options={{
           tabBarIcon: ({ color, size }) => <ClipboardList color={color} size={size} />,
           tabBarLabel: 'Appointments',
+        }}
+      />
+      <Tab.Screen
+        name="Notifications"
+        component={NotificationsScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => <Bell color={color} size={size} />,
+          tabBarLabel: 'Notifications',
         }}
       />
       <Tab.Screen
