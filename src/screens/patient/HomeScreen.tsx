@@ -1,164 +1,451 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, Image, StatusBar } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  TextInput,
+  TouchableOpacity,
+  ActivityIndicator,
+  RefreshControl,
+  Alert,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Search, SlidersHorizontal, Bell, Video, Calendar, ChevronRight, Stethoscope, Heart, Eye } from 'lucide-react-native';
-import SectionHeader from '../../components/ui/SectionHeader';
-import CategoryChip from '../../components/ui/CategoryChip';
-import DoctorCard from '../../components/ui/DoctorCard';
+import {
+  Search,
+  Bell,
+  Calendar,
+  ChevronRight,
+  Stethoscope,
+  Heart,
+  Eye,
+  Brain,
+  Bone,
+  Baby,
+  Smile,
+  SlidersHorizontal,
+  Star,
+  BadgeDollarSign,
+  Briefcase,
+} from 'lucide-react-native';
+import { useSelector } from 'react-redux';
+import {
+  useGetSpecializationsQuery,
+  useGetAllDoctorsQuery,
+  useGetDoctorsBySpecializationQuery,
+  useGetUpcomingPatientAppointmentsQuery,
+  useGetUnreadNotificationCountQuery,
+} from '../../services/api';
 import { colors } from '../../theme/colors';
 
-// Mock Data
-const DOCTORS = [
-  {
-    id: '1',
-    name: 'Dr. Emily Chen',
-    specialty: 'Cardiologist • St. Mary\'s',
-    rating: 4.8,
-    reviewsCount: 120,
-    experience: 8,
-    about: '...',
-    imageUrl: 'https://randomuser.me/api/portraits/women/44.jpg',
-    availability: 'Today',
-    fee: 45.00,
-    isAvailableToday: true,
-  },
-  {
-    id: '2',
-    name: 'Dr. James Wilson',
-    specialty: 'Dentist • City Clinic',
-    rating: 4.9,
-    reviewsCount: 85,
-    experience: 12,
-    about: '...',
-    imageUrl: 'https://randomuser.me/api/portraits/men/32.jpg',
-    availability: 'Today',
-    fee: 30.00,
-    isAvailableToday: true,
-  },
-];
+// ─── Specialization icon map ──────────────────────────────────────────────────
+const SPEC_ICONS: Record<string, React.ReactNode> = {
+  CARDIOLOGIST: <Heart size={18} />,
+  NEUROLOGIST: <Brain size={18} />,
+  OPHTHALMOLOGIST: <Eye size={18} />,
+  ORTHOPEDIC_SURGEON: <Bone size={18} />,
+  PEDIATRICIAN: <Baby size={18} />,
+  DENTIST: <Smile size={18} />,
+  GENERAL_PRACTITIONER: <Stethoscope size={18} />,
+};
+const DEFAULT_ICON = <Stethoscope size={18} />;
 
-const HomeScreen = ({ navigation }: any) => {
-  const [activeCategory, setActiveCategory] = useState('General');
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const formatTime = (t: string) => {
+  if (!t) return '';
+  const [h, m] = t.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${ampm}`;
+};
 
-  const CATEGORIES = [
-    { id: '1', label: 'General', icon: <Stethoscope size={20} /> },
-    { id: '2', label: 'Cardio', icon: <Heart size={20} /> },
-    { id: '3', label: 'Dentist', icon: <Stethoscope size={20} /> }, // Placeholder icon
-    { id: '4', label: 'Vision', icon: <Eye size={20} /> },
-  ];
+const getGreeting = () => {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good Morning';
+  if (h < 17) return 'Good Afternoon';
+  return 'Good Evening';
+};
+
+// ─── Inline Doctor Card ───────────────────────────────────────────────────────
+function DoctorCard({ doctor, onBookPress, onViewPress }: any) {
+  const initials = (doctor.name ?? 'D')
+    .split(' ')
+    .map((w: string) => w[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
 
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-background-dark">
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
-      <ScrollView contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View className="flex-row justify-between items-center px-6 pt-2 pb-4">
-          <View>
-            <Text className="text-[#637288] text-sm font-medium">Good Morning,</Text>
-            <Text className="text-[#111418] dark:text-white text-2xl font-bold">Alex 👋</Text>
+    <TouchableOpacity
+      onPress={onViewPress}
+      activeOpacity={0.92}
+      style={{
+        backgroundColor: '#fff',
+        borderRadius: 20,
+        padding: 16,
+        marginBottom: 14,
+        borderWidth: 1,
+        borderColor: '#f1f5f9',
+        shadowColor: '#000',
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 2,
+      }}
+    >
+      <View style={{ flexDirection: 'row', gap: 14 }}>
+        {/* Avatar */}
+        <View
+          style={{
+            width: 72,
+            height: 72,
+            borderRadius: 16,
+            backgroundColor: `${colors.primary}15`,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderWidth: 1.5,
+            borderColor: `${colors.primary}25`,
+          }}
+        >
+          <Text style={{ color: colors.primary, fontWeight: '800', fontSize: 20 }}>
+            {initials}
+          </Text>
+        </View>
+
+        {/* Details */}
+        <View style={{ flex: 1 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontWeight: '800', fontSize: 15, color: '#0f172a' }} numberOfLines={1}>
+                Dr. {doctor.name}
+              </Text>
+              <Text style={{ color: '#64748b', fontSize: 12, fontWeight: '500', marginTop: 2 }}>
+                {doctor.specializationDisplayName ?? doctor.specialization}
+              </Text>
+            </View>
+            {/* Active badge */}
+            {doctor.isActive && (
+              <View style={{ backgroundColor: '#dcfce7', borderRadius: 999, paddingHorizontal: 7, paddingVertical: 3 }}>
+                <Text style={{ color: '#16a34a', fontSize: 10, fontWeight: '700' }}>Available</Text>
+              </View>
+            )}
           </View>
-          <View className="flex-row items-center gap-3">
-            <TouchableOpacity className="w-10 h-10 rounded-full bg-background-light dark:bg-gray-800 items-center justify-center">
-              <Bell size={24} color="#111418" />
-            </TouchableOpacity>
-            <Image
-              source={{ uri: 'https://randomuser.me/api/portraits/men/1.jpg' }}
-              className="w-10 h-10 rounded-full"
-              style={{ borderWidth: 2, borderColor: 'white' }}
+
+          {/* Experience + Fee */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10, gap: 14 }}>
+            <View>
+              <Text style={{ color: '#94a3b8', fontSize: 9, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                Experience
+              </Text>
+              <Text style={{ color: '#334155', fontWeight: '700', fontSize: 13, marginTop: 1 }}>
+                {doctor.experienceYears ?? '—'} yrs
+              </Text>
+            </View>
+            <View style={{ width: 1, height: 24, backgroundColor: '#e2e8f0' }} />
+            <View>
+              <Text style={{ color: '#94a3b8', fontSize: 9, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                Fee
+              </Text>
+              <Text style={{ color: colors.primary, fontWeight: '700', fontSize: 13, marginTop: 1 }}>
+                ₹ {doctor.consultationFee}
+              </Text>
+            </View>
+            <View style={{ width: 1, height: 24, backgroundColor: '#e2e8f0' }} />
+            <View>
+              <Text style={{ color: '#94a3b8', fontSize: 9, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                Qual.
+              </Text>
+              <Text style={{ color: '#334155', fontWeight: '600', fontSize: 11, marginTop: 1 }} numberOfLines={1}>
+                {(doctor.qualification ?? '').split(',')[0]}
+              </Text>
+            </View>
+          </View>
+        </View>
+      </View>
+
+      {/* Book button */}
+      <TouchableOpacity
+        onPress={onBookPress}
+        style={{
+          marginTop: 12,
+          backgroundColor: `${colors.primary}10`,
+          borderRadius: 12,
+          paddingVertical: 10,
+          alignItems: 'center',
+        }}
+      >
+        <Text style={{ color: colors.primary, fontWeight: '700', fontSize: 13 }}>
+          Book Appointment
+        </Text>
+      </TouchableOpacity>
+    </TouchableOpacity>
+  );
+}
+
+// ─── Main Screen ──────────────────────────────────────────────────────────────
+export default function HomeScreen({ navigation }: any) {
+  const user = useSelector((s: any) => s.auth.user);
+  const patientId: string = user?.patientId ?? user?.id ?? '';
+
+  const [selectedSpec, setSelectedSpec] = useState<string | null>(null); // null = All
+  const [search, setSearch] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
+
+  // API calls
+  const { data: specsData, isLoading: loadingSpecs } = useGetSpecializationsQuery();
+  const { data: allDoctorsData, isLoading: loadingDoctors, refetch: refetchDoctors } = useGetAllDoctorsQuery();
+  const { data: filteredData, isLoading: loadingFiltered } = useGetDoctorsBySpecializationQuery(
+    selectedSpec ?? '',
+    { skip: !selectedSpec }
+  );
+  const { data: upcomingData } = useGetUpcomingPatientAppointmentsQuery(patientId, { skip: !patientId });
+  const { data: unreadData } = useGetUnreadNotificationCountQuery(undefined);
+
+  const specializations: any[] = specsData?.data ?? [];
+  const allDoctors: any[] = allDoctorsData?.data ?? [];
+  const filteredDoctors: any[] = filteredData?.data ?? [];
+  const upcomingAppointments: any[] = upcomingData?.data ?? [];
+  const unreadCount = unreadData?.data?.count ?? 0;
+  const nextAppt = upcomingAppointments[0] ?? null;
+
+  const displayedDoctors = useMemo(() => {
+    const base = selectedSpec ? filteredDoctors : allDoctors;
+    if (!search.trim()) return base;
+    const q = search.toLowerCase();
+    return base.filter(
+      (d: any) =>
+        d.name?.toLowerCase().includes(q) ||
+        d.specializationDisplayName?.toLowerCase().includes(q)
+    );
+  }, [selectedSpec, filteredDoctors, allDoctors, search]);
+
+  const isLoadingDoctors = loadingDoctors || loadingFiltered;
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await refetchDoctors();
+    setRefreshing(false);
+  };
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+      {/* Header */}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 12, paddingBottom: 8 }}>
+        <View>
+          <Text style={{ color: '#64748b', fontSize: 13, fontWeight: '600' }}>{getGreeting()},</Text>
+          <Text style={{ color: '#0f172a', fontSize: 22, fontWeight: '800', marginTop: 1 }}>
+            {user?.name ?? 'Welcome'} 👋
+          </Text>
+        </View>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Notifications')}
+          style={{
+            width: 42,
+            height: 42,
+            borderRadius: 21,
+            backgroundColor: '#f1f5f9',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'relative',
+          }}
+        >
+          <Bell size={20} color="#334155" />
+          {unreadCount > 0 && (
+            <View
+              style={{
+                position: 'absolute',
+                top: 8,
+                right: 10,
+                width: 10,
+                height: 10,
+                borderRadius: 5,
+                backgroundColor: '#ef4444',
+                borderWidth: 2,
+                borderColor: '#f1f5f9',
+              }}
             />
-          </View>
-        </View>
+          )}
+        </TouchableOpacity>
+      </View>
 
-        {/* Search Bar */}
-        <View className="px-6 py-2 mb-2">
-          <View className="flex-row items-center bg-[#f0f2f4] dark:bg-gray-800 rounded-full px-4 h-14">
-            <Search size={24} color="#637288" />
-            <TextInput
-              placeholder="Find your specialist..."
-              placeholderTextColor="#637288"
-              className="flex-1 ml-3 text-base text-[#111418] dark:text-white h-full"
-            />
-            <TouchableOpacity className="bg-white dark:bg-gray-700 p-2 rounded-full shadow-sm">
-              <SlidersHorizontal size={20} color={colors.primary} />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Categories */}
-        <View className="py-4">
-          <SectionHeader title="Categories" actionText="See all" onAction={() => { }} />
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24 }} className="mt-3">
-            {CATEGORIES.map((cat) => {
-              const isActive = activeCategory === cat.label;
-              // Determine icon color
-              let iconColor = '#111418';
-              if (isActive) iconColor = 'white';
-              else if (cat.label === 'Cardio') iconColor = '#ef4444';
-              else if (cat.label === 'Vision') iconColor = '#a855f7';
-              else if (cat.label === 'Dentist') iconColor = '#3b82f6';
-
-              return (
-                <CategoryChip
-                  key={cat.id}
-                  label={cat.label}
-                  icon={React.cloneElement(cat.icon as React.ReactElement, { color: iconColor })}
-                  isActive={isActive}
-                  onPress={() => setActiveCategory(cat.label)}
-                />
-              );
-            })}
-          </ScrollView>
-        </View>
-
-        {/* Upcoming Appointment */}
-        <View className="px-6 py-4">
-          <TouchableOpacity
-            activeOpacity={0.95}
-            className="bg-primary rounded-3xl p-5 shadow-lg shadow-primary/30 relative overflow-hidden"
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
+        {/* Search bar */}
+        <View style={{ paddingHorizontal: 20, paddingVertical: 10 }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              backgroundColor: '#f8fafc',
+              borderRadius: 16,
+              paddingHorizontal: 14,
+              height: 52,
+              borderWidth: 1,
+              borderColor: '#e2e8f0',
+            }}
           >
-            {/* Decorative Circle */}
-            <View className="absolute -right-6 -top-6 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
-
-            <View className="flex-row justify-between items-start mb-4 z-10">
-              <View>
-                <Text className="text-white/80 text-xs font-semibold uppercase tracking-wider mb-1">
-                  Upcoming Appointment
-                </Text>
-                <Text className="text-white text-xl font-bold">Dr. Sarah Smith</Text>
-                <Text className="text-white/90 text-sm">General Practitioner</Text>
-              </View>
-              <View className="w-12 h-12 rounded-full bg-white/20 items-center justify-center">
-                <Video size={24} color="white" />
-              </View>
-            </View>
-
-            <View className="bg-black/20 rounded-2xl p-3 flex-row items-center justify-between z-10 backdrop-blur-sm">
-              <View className="flex-row items-center gap-2">
-                <Calendar size={18} color="white" />
-                <Text className="text-white text-sm font-medium">Today, 10:30 AM</Text>
-              </View>
-              <ChevronRight size={18} color="white" opacity={0.6} />
-            </View>
-          </TouchableOpacity>
+            <Search size={20} color="#94a3b8" />
+            <TextInput
+              placeholder="Search doctor or specialty..."
+              placeholderTextColor="#94a3b8"
+              value={search}
+              onChangeText={setSearch}
+              style={{ flex: 1, marginLeft: 10, fontSize: 14, color: '#0f172a' }}
+            />
+            {search.length > 0 && (
+              <TouchableOpacity onPress={() => setSearch('')}>
+                <Text style={{ color: '#94a3b8', fontSize: 18 }}>✕</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
-        {/* Available Today */}
-        <View className="flex-1 pb-6">
-          <SectionHeader title="Available Today" />
-          <View className="px-6 mt-2">
-            {DOCTORS.map((doctor) => (
-              <DoctorCard
-                key={doctor.id}
-                doctor={doctor}
-                onPress={() => navigation.navigate('DoctorProfile', { doctorId: doctor.id })}
-                onBookPress={() => navigation.navigate('BookingModal', { doctorId: doctor.id })}
-              />
-            ))}
+        {/* Upcoming appointment banner */}
+        {nextAppt && (
+          <View style={{ paddingHorizontal: 20, marginBottom: 4 }}>
+            <TouchableOpacity
+              activeOpacity={0.95}
+              style={{
+                backgroundColor: colors.primary,
+                borderRadius: 22,
+                padding: 18,
+                overflow: 'hidden',
+              }}
+            >
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                <View>
+                  <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: 11, fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase' }}>
+                    Upcoming Appointment
+                  </Text>
+                  <Text style={{ color: '#fff', fontSize: 18, fontWeight: '800', marginTop: 3 }}>
+                    Dr. {nextAppt.doctorName}
+                  </Text>
+                  <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 12, marginTop: 2 }}>
+                    {nextAppt.specialization?.replace('_', ' ')}
+                  </Text>
+                </View>
+                <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}>
+                  <Calendar size={22} color="#fff" />
+                </View>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'rgba(0,0,0,0.15)', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Calendar size={16} color="#fff" />
+                  <Text style={{ color: '#fff', fontSize: 13, fontWeight: '600' }}>
+                    {nextAppt.appointmentDate}  ·  {formatTime(nextAppt.startTime)}
+                  </Text>
+                </View>
+                <ChevronRight size={16} color="rgba(255,255,255,0.6)" />
+              </View>
+            </TouchableOpacity>
           </View>
+        )}
+
+        {/* Specialization category chips */}
+        <View style={{ paddingTop: 20 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginBottom: 12 }}>
+            <Text style={{ fontSize: 17, fontWeight: '800', color: '#0f172a' }}>Categories</Text>
+            <TouchableOpacity onPress={() => setSelectedSpec(null)}>
+              <Text style={{ color: colors.primary, fontWeight: '700', fontSize: 13 }}>
+                {selectedSpec ? 'See All' : ''}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {loadingSpecs ? (
+            <ActivityIndicator color={colors.primary} style={{ marginLeft: 20 }} />
+          ) : (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 20, gap: 10 }}
+            >
+              {/* "All" chip */}
+              <TouchableOpacity
+                onPress={() => setSelectedSpec(null)}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  paddingHorizontal: 16,
+                  paddingVertical: 10,
+                  borderRadius: 999,
+                  backgroundColor: !selectedSpec ? colors.primary : '#f1f5f9',
+                  gap: 6,
+                }}
+              >
+                <Stethoscope size={16} color={!selectedSpec ? '#fff' : '#64748b'} />
+                <Text style={{ color: !selectedSpec ? '#fff' : '#64748b', fontWeight: '700', fontSize: 13 }}>All</Text>
+              </TouchableOpacity>
+
+              {specializations.slice(0, 10).map((spec: any) => {
+                const isActive = selectedSpec === spec.code;
+                const icon = SPEC_ICONS[spec.code] ?? DEFAULT_ICON;
+                return (
+                  <TouchableOpacity
+                    key={spec.code}
+                    onPress={() => setSelectedSpec(isActive ? null : spec.code)}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      paddingHorizontal: 16,
+                      paddingVertical: 10,
+                      borderRadius: 999,
+                      backgroundColor: isActive ? colors.primary : '#f1f5f9',
+                      gap: 6,
+                    }}
+                  >
+                    {React.cloneElement(icon as React.ReactElement, {
+                      color: isActive ? '#fff' : '#64748b',
+                      size: 16,
+                    })}
+                    <Text style={{ color: isActive ? '#fff' : '#64748b', fontWeight: '700', fontSize: 13 }}>
+                      {spec.displayName}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          )}
+        </View>
+
+        {/* Doctor list */}
+        <View style={{ paddingHorizontal: 20, paddingTop: 24 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <Text style={{ fontSize: 17, fontWeight: '800', color: '#0f172a' }}>
+              {selectedSpec
+                ? specializations.find((s) => s.code === selectedSpec)?.displayName ?? 'Doctors'
+                : 'All Doctors'}
+            </Text>
+            <Text style={{ color: '#94a3b8', fontSize: 13, fontWeight: '600' }}>
+              {displayedDoctors.length} found
+            </Text>
+          </View>
+
+          {isLoadingDoctors ? (
+            <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
+          ) : displayedDoctors.length === 0 ? (
+            <View style={{ alignItems: 'center', marginTop: 40 }}>
+              <Stethoscope size={44} color="#cbd5e1" />
+              <Text style={{ color: '#94a3b8', fontWeight: '600', fontSize: 15, marginTop: 12, textAlign: 'center' }}>
+                No doctors found
+              </Text>
+            </View>
+          ) : (
+            displayedDoctors.map((doctor: any) => (
+              <DoctorCard
+                key={doctor.doctorId}
+                doctor={doctor}
+                onViewPress={() =>
+                  navigation.navigate('DoctorProfile', { doctorId: doctor.doctorId })
+                }
+                onBookPress={() =>
+                  navigation.navigate('BookingModal', { doctorId: doctor.doctorId })
+                }
+              />
+            ))
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
   );
-};
-
-export default HomeScreen;
+}

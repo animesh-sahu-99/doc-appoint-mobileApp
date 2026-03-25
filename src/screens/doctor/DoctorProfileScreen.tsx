@@ -24,7 +24,7 @@ import { useGetDoctorProfileQuery } from '../../services/api';
 import { logout } from '../../store/slices/authSlice';
 import { colors } from '../../theme/colors';
 
-export default function DoctorProfileScreen() {
+export default function DoctorProfileScreen({ navigation }: any) {
     const user = useSelector((s: any) => s.auth.user);
     const dispatch = useDispatch();
     const doctorId: string = user?.doctorId ?? user?.id ?? '';
@@ -86,7 +86,7 @@ export default function DoctorProfileScreen() {
                 <View
                     className="items-center px-6 pt-8 pb-10"
                     style={{
-                        background: 'white',
+                        backgroundColor: 'white',
                         borderBottomLeftRadius: 32,
                         borderBottomRightRadius: 32,
                     }}
@@ -118,6 +118,20 @@ export default function DoctorProfileScreen() {
                                     {doctor.about}
                                 </Text>
                             )}
+                            {/* Edit Profile Button */}
+                            <TouchableOpacity
+                                onPress={() => navigation.navigate('EditDoctorProfile')}
+                                style={{
+                                    marginTop: 16,
+                                    paddingHorizontal: 24,
+                                    paddingVertical: 10,
+                                    borderRadius: 20,
+                                    borderWidth: 1.5,
+                                    borderColor: colors.primary,
+                                }}
+                            >
+                                <Text style={{ color: colors.primary, fontWeight: '700', fontSize: 14 }}>Edit Profile</Text>
+                            </TouchableOpacity>
                         </>
                     )}
                 </View>

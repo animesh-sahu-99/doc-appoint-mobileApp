@@ -12,69 +12,32 @@ import { useSelector } from 'react-redux';
 import { CalendarDays, Clock, Stethoscope, BadgeDollarSign, FileText } from 'lucide-react-native';
 import {
     useGetPatientAppointmentsQuery,
-    useGetUpcomingPatientAppointmentsQuery,
 } from '../../services/api';
 import { colors } from '../../theme/colors';
+import { formatTime, formatDateLabel } from '../../utils/formatters';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const buildDays = () => {
-    const days: { dateStr: string; dayNum: number; dayName: string }[] = [];
-    // Show 30 days: 7 past + today + 22 future
-    for (let i = -7; i <= 22; i++) {
-        const d = new Date();
-        d.setDate(d.getDate() + i);
-        const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
-            d.getDate()
-        ).padStart(2, '0')}`;
-        days.push({
-            dateStr,
-            dayNum: d.getDate(),
-            dayName: d.toLocaleDateString('en-US', { weekday: 'short' }),
-        });
-    }
-    return days;
-};
 
-const todayStr = () => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
-        d.getDate()
-    ).padStart(2, '0')}`;
-};
-
-const formatTime = (t: string) => {
-    if (!t) return '';
-    const [h, m] = t.split(':').map(Number);
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    const hour = h % 12 || 12;
-    return `${hour}:${String(m).padStart(2, '0')} ${ampm}`;
-};
-
-const formatDateLabel = (dateStr: string) => {
-    if (!dateStr) return '';
-    const d = new Date(dateStr + 'T00:00:00'); // local parse
-    return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-};
 
 const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; dot: string }> = {
-    PENDING: { label: 'Pending', bg: '#fef3c7', text: '#d97706', dot: '#f59e0b' },
-    CONFIRMED: { label: 'Confirmed', bg: '#dcfce7', text: '#16a34a', dot: '#22c55e' },
-    COMPLETED: { label: 'Completed', bg: '#dbeafe', text: '#1d4ed8', dot: '#3b82f6' },
-    CANCELLED: { label: 'Cancelled', bg: '#fee2e2', text: '#dc2626', dot: '#ef4444' },
-    NO_SHOW: { label: 'No Show', bg: '#f3f4f6', text: '#6b7280', dot: '#9ca3af' },
+    PENDING: { label: 'Pending', bg: '#fffbeb', text: '#d97706', dot: '#f59e0b' },
+    CONFIRMED: { label: 'Confirmed', bg: '#f0fdf4', text: '#16a34a', dot: '#22c55e' },
+    COMPLETED: { label: 'Completed', bg: '#eff6ff', text: '#1d4ed8', dot: '#3b82f6' },
+    CANCELLED: { label: 'Cancelled', bg: '#fff1f2', text: '#e11d48', dot: '#ef4444' },
+    NO_SHOW: { label: 'No Show', bg: '#f8fafc', text: '#64748b', dot: '#9ca3af' },
 };
-
-const DAYS = buildDays();
 
 // ─── Appointment Card ─────────────────────────────────────────────────────────
 
-function AppointmentCard({ appt }: { appt: any }) {
+function AppointmentCard({ appt, onPress }: { appt: any; onPress: () => void }) {
     const status = appt.status as string;
     const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.PENDING;
 
     return (
-        <View
+        <TouchableOpacity
+            onPress={onPress}
+            activeOpacity={0.75}
             style={{
                 backgroundColor: '#fff',
                 borderRadius: 16,
@@ -88,20 +51,12 @@ function AppointmentCard({ appt }: { appt: any }) {
                 elevation: 2,
             }}
         >
-            {/* Header row */}
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                {/* Doctor avatar + info */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 12 }}>
-                    <View
-                        style={{
-                            width: 48,
-                            height: 48,
-                            borderRadius: 14,
-                            backgroundColor: `${colors.primary}15`,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}
-                    >
+                    <View style={{
+                        width: 48, height: 48, borderRadius: 14, backgroundColor: `${colors.primary}15`,
+                        alignItems: 'center', justifyContent: 'center'
+                    }}>
                         <Stethoscope size={22} color={colors.primary} />
                     </View>
                     <View style={{ flex: 1 }}>
@@ -109,12 +64,10 @@ function AppointmentCard({ appt }: { appt: any }) {
                             {appt.doctorName ?? 'Doctor'}
                         </Text>
                         <Text style={{ color: '#64748b', fontSize: 12, fontWeight: '500', marginTop: 2 }}>
-                            {appt.specialization?.replace('_', ' ') ?? 'Specialist'}
+                            {appt.specialization?.replace(/_/g, ' ') ?? 'Specialist'}
                         </Text>
                     </View>
                 </View>
-
-                {/* Status badge */}
                 <View style={{ backgroundColor: cfg.bg, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>
                     <Text style={{ color: cfg.text, fontSize: 10, fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase' }}>
                         {cfg.label}
@@ -122,320 +75,197 @@ function AppointmentCard({ appt }: { appt: any }) {
                 </View>
             </View>
 
-            {/* Divider */}
             <View style={{ height: 1, backgroundColor: '#f8fafc', marginBottom: 12 }} />
 
-            {/* Details */}
             <View style={{ gap: 8 }}>
-                {/* Time */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <CalendarDays size={14} color="#94a3b8" />
+                    <Text style={{ color: '#475569', fontSize: 13, fontWeight: '600' }}>
+                        {formatDateLabel(appt.appointmentDate)}
+                    </Text>
+                </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <Clock size={14} color="#94a3b8" />
                     <Text style={{ color: '#475569', fontSize: 13, fontWeight: '600' }}>
                         {formatTime(appt.startTime)} – {formatTime(appt.endTime)}
-                        {appt.durationMinutes ? `  ·  ${appt.durationMinutes} min` : ''}
                     </Text>
                 </View>
 
-                {/* Reason */}
                 {appt.reasonForVisit && (
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                         <FileText size={14} color="#94a3b8" />
-                        <Text style={{ color: '#475569', fontSize: 13, flex: 1 }} numberOfLines={2}>
+                        <Text style={{ color: '#475569', fontSize: 13, flex: 1 }} numberOfLines={1}>
                             {appt.reasonForVisit}
                         </Text>
                     </View>
                 )}
-
-                {/* Fee */}
-                {appt.consultationFee && (
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                        <BadgeDollarSign size={14} color="#94a3b8" />
-                        <Text style={{ color: '#475569', fontSize: 13, fontWeight: '500' }}>
-                            ₹ {appt.consultationFee}
-                        </Text>
-                    </View>
-                )}
-
-                {/* Notes */}
-                {appt.notes && (
-                    <View
-                        style={{
-                            backgroundColor: '#f8fafc',
-                            borderRadius: 10,
-                            padding: 10,
-                            marginTop: 4,
-                        }}
-                    >
-                        <Text style={{ color: '#64748b', fontSize: 12, lineHeight: 18 }}>
-                            📝 {appt.notes}
-                        </Text>
-                    </View>
-                )}
             </View>
 
-            {/* Appointment number */}
-            <View style={{ marginTop: 10, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: cfg.dot }} />
-                <Text style={{ color: '#94a3b8', fontSize: 11, fontWeight: '600' }}>
-                    {appt.appointmentNumber}
-                </Text>
+            <View style={{ marginTop: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: cfg.dot }} />
+                    <Text style={{ color: '#94a3b8', fontSize: 11, fontWeight: '600' }}>
+                        {appt.appointmentNumber}
+                    </Text>
+                </View>
+                <Text style={{ color: '#cbd5e1', fontSize: 12, fontWeight: '600' }}>View details →</Text>
             </View>
-        </View>
-    );
-}
-
-// ─── Upcoming Banner ──────────────────────────────────────────────────────────
-
-function UpcomingBanner({ appt }: { appt: any }) {
-    const status = appt.status as string;
-    const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.CONFIRMED;
-    return (
-        <View
-            style={{
-                backgroundColor: colors.primary,
-                borderRadius: 20,
-                padding: 16,
-                marginBottom: 12,
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 14,
-                shadowColor: colors.primary,
-                shadowOpacity: 0.3,
-                shadowRadius: 10,
-                elevation: 4,
-            }}
-        >
-            <View
-                style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 12,
-                    backgroundColor: 'rgba(255,255,255,0.2)',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                }}
-            >
-                <Stethoscope size={20} color="#fff" />
-            </View>
-            <View style={{ flex: 1 }}>
-                <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: 11, fontWeight: '600', letterSpacing: 0.5, textTransform: 'uppercase' }}>
-                    Next Appointment
-                </Text>
-                <Text style={{ color: '#fff', fontWeight: '800', fontSize: 15, marginTop: 2 }}>
-                    {appt.doctorName}
-                </Text>
-                <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12, marginTop: 2 }}>
-                    {formatDateLabel(appt.appointmentDate)}  ·  {formatTime(appt.startTime)}
-                </Text>
-            </View>
-            <View style={{ backgroundColor: cfg.bg, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 }}>
-                <Text style={{ color: cfg.text, fontSize: 10, fontWeight: '700', textTransform: 'uppercase' }}>
-                    {cfg.label}
-                </Text>
-            </View>
-        </View>
+        </TouchableOpacity>
     );
 }
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
-export default function PatientScheduleScreen() {
+export default function PatientScheduleScreen({ navigation }: any) {
     const user = useSelector((s: any) => s.auth.user);
     const patientId: string = user?.patientId ?? user?.id ?? '';
 
-    const today = todayStr();
-    const [selectedDate, setSelectedDate] = useState(today);
+    const [activeTab, setActiveTab] = useState<'UPCOMING' | 'PAST'>('UPCOMING');
     const [refreshing, setRefreshing] = useState(false);
 
+    // We only need the single query that returns ALL appointments
     const {
         data: allData,
-        isLoading: loadingAll,
-        refetch: refetchAll,
+        isLoading,
+        refetch,
     } = useGetPatientAppointmentsQuery(patientId, { skip: !patientId });
 
-    const {
-        data: upcomingData,
-        isLoading: loadingUpcoming,
-        refetch: refetchUpcoming,
-    } = useGetUpcomingPatientAppointmentsQuery(patientId, { skip: !patientId });
+    const navigateToDetails = (appointment: any) => {
+        navigation.navigate('PatientAppointmentDetails', { appointment });
+    };
 
     const allAppointments: any[] = allData?.data ?? [];
-    const upcomingAppointments: any[] = upcomingData?.data ?? [];
 
-    // Filter appointments matching the selected date
-    const appointmentsForDate = useMemo(
-        () => allAppointments.filter((a) => a.appointmentDate === selectedDate),
-        [allAppointments, selectedDate]
-    );
+    // Split appointments into Upcoming vs Past based on status and date
+    // PENDING, CONFIRMED go to Upcoming
+    // COMPLETED, CANCELLED, NO_SHOW go to Past
+    const { upcoming, past } = useMemo(() => {
+        const up: any[] = [];
+        const pa: any[] = [];
 
-    // Compute which dates have appointments (for dot indicator on date strip)
-    const datesWithAppointments = useMemo(
-        () => new Set(allAppointments.map((a) => a.appointmentDate as string)),
-        [allAppointments]
-    );
+        allAppointments.forEach((appt) => {
+            if (appt.status === 'PENDING' || appt.status === 'CONFIRMED') {
+                up.push(appt);
+            } else {
+                pa.push(appt);
+            }
+        });
 
-    const nextUpcoming = upcomingAppointments[0] ?? null;
+        // Sort upcoming: nearest first (ascending)
+        up.sort((a, b) => {
+            const dateA = new Date(`${a.appointmentDate}T${a.startTime}`);
+            const dateB = new Date(`${b.appointmentDate}T${b.startTime}`);
+            return dateA.getTime() - dateB.getTime();
+        });
+
+        // Sort past: most recent first (descending)
+        pa.sort((a, b) => {
+            const dateA = new Date(`${a.appointmentDate}T${a.startTime}`);
+            const dateB = new Date(`${b.appointmentDate}T${b.startTime}`);
+            return dateB.getTime() - dateA.getTime();
+        });
+
+        return { upcoming: up, past: pa };
+    }, [allAppointments]);
 
     const onRefresh = async () => {
         setRefreshing(true);
-        await Promise.all([refetchAll(), refetchUpcoming()]);
+        await refetch();
         setRefreshing(false);
     };
 
-    const isLoading = loadingAll || loadingUpcoming;
+    const displayList = activeTab === 'UPCOMING' ? upcoming : past;
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc' }}>
             {/* Header */}
-            <View
-                style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    paddingHorizontal: 20,
-                    paddingTop: 12,
-                    paddingBottom: 10,
-                    borderBottomWidth: 1,
-                    borderBottomColor: `${colors.primary}12`,
-                }}
-            >
-                <CalendarDays size={22} color={colors.primary} />
-                <Text style={{ fontSize: 18, fontWeight: '800', color: '#0f172a', flex: 1, marginLeft: 10 }}>
-                    My Schedule
-                </Text>
-                <Text style={{ fontSize: 12, color: '#94a3b8', fontWeight: '600' }}>
-                    {allAppointments.length} total
+            <View style={{
+                flexDirection: 'row', alignItems: 'center',
+                paddingHorizontal: 20, paddingTop: 12, paddingBottom: 16,
+                backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f1f5f9',
+            }}>
+                <CalendarDays size={24} color={colors.primary} />
+                <Text style={{ fontSize: 20, fontWeight: '800', color: '#0f172a', marginLeft: 10 }}>
+                    My Appointments
                 </Text>
             </View>
 
-            {/* Date Strip */}
-            <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 12, gap: 10 }}
-                style={{ flexShrink: 0, borderBottomWidth: 1, borderBottomColor: `${colors.primary}08` }}
-            >
-                {DAYS.map((day) => {
-                    const isSelected = day.dateStr === selectedDate;
-                    const isToday = day.dateStr === today;
-                    const hasAppt = datesWithAppointments.has(day.dateStr);
+            {/* Tabs */}
+            <View style={{
+                flexDirection: 'row',
+                backgroundColor: '#fff',
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+                borderBottomWidth: 1,
+                borderBottomColor: '#f1f5f9',
+                gap: 12,
+            }}>
+                <TouchableOpacity
+                    onPress={() => setActiveTab('UPCOMING')}
+                    style={{
+                        flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10,
+                        backgroundColor: activeTab === 'UPCOMING' ? `${colors.primary}12` : '#f8fafc',
+                        borderWidth: 1, borderColor: activeTab === 'UPCOMING' ? colors.primary : 'transparent',
+                    }}
+                >
+                    <Text style={{
+                        fontSize: 14, fontWeight: '700',
+                        color: activeTab === 'UPCOMING' ? colors.primary : '#64748b'
+                    }}>
+                        Upcoming ({upcoming.length})
+                    </Text>
+                </TouchableOpacity>
 
-                    return (
-                        <TouchableOpacity
-                            key={day.dateStr}
-                            onPress={() => setSelectedDate(day.dateStr)}
-                            style={{
-                                width: 52,
-                                height: 68,
-                                borderRadius: 14,
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                backgroundColor: isSelected ? `${colors.primary}15` : '#f8fafc',
-                                borderWidth: isSelected ? 1.5 : 0,
-                                borderColor: isSelected ? colors.primary : 'transparent',
-                            }}
-                        >
-                            <Text
-                                style={{
-                                    fontSize: 10,
-                                    fontWeight: '700',
-                                    textTransform: 'uppercase',
-                                    color: isSelected ? colors.primary : '#94a3b8',
-                                    letterSpacing: 0.5,
-                                }}
-                            >
-                                {day.dayName}
-                            </Text>
-                            <Text
-                                style={{
-                                    fontSize: 18,
-                                    fontWeight: '800',
-                                    marginTop: 2,
-                                    color: isSelected ? colors.primary : isToday ? '#334155' : '#475569',
-                                }}
-                            >
-                                {day.dayNum}
-                            </Text>
-                            {/* Dot for dates with appointments */}
-                            <View
-                                style={{
-                                    width: 5,
-                                    height: 5,
-                                    borderRadius: 3,
-                                    marginTop: 3,
-                                    backgroundColor: hasAppt
-                                        ? isSelected
-                                            ? colors.primary
-                                            : '#94a3b8'
-                                        : 'transparent',
-                                }}
-                            />
-                        </TouchableOpacity>
-                    );
-                })}
-            </ScrollView>
+                <TouchableOpacity
+                    onPress={() => setActiveTab('PAST')}
+                    style={{
+                        flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10,
+                        backgroundColor: activeTab === 'PAST' ? `${colors.primary}12` : '#f8fafc',
+                        borderWidth: 1, borderColor: activeTab === 'PAST' ? colors.primary : 'transparent',
+                    }}
+                >
+                    <Text style={{
+                        fontSize: 14, fontWeight: '700',
+                        color: activeTab === 'PAST' ? colors.primary : '#64748b'
+                    }}>
+                        Past ({past.length})
+                    </Text>
+                </TouchableOpacity>
+            </View>
 
             {/* Body */}
             {isLoading ? (
-                <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 60 }} />
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <ActivityIndicator size="large" color={colors.primary} />
+                </View>
             ) : (
                 <ScrollView
                     showsVerticalScrollIndicator={false}
                     contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
                 >
-                    {/* Upcoming banner — only on today's view */}
-                    {selectedDate === today && nextUpcoming && (
-                        <UpcomingBanner appt={nextUpcoming} />
-                    )}
-
-                    {/* Date label */}
-                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, marginTop: 4 }}>
-                        <Text style={{ fontSize: 16, fontWeight: '800', color: '#0f172a' }}>
-                            {selectedDate === today
-                                ? "Today's Appointments"
-                                : formatDateLabel(selectedDate)}
-                        </Text>
-                        <Text style={{ fontSize: 13, fontWeight: '600', color: colors.primary }}>
-                            {appointmentsForDate.length > 0
-                                ? `${appointmentsForDate.length} appt${appointmentsForDate.length > 1 ? 's' : ''}`
-                                : ''}
-                        </Text>
-                    </View>
-
-                    {/* Appointment cards for selected date */}
-                    {appointmentsForDate.length === 0 ? (
-                        <View
-                            style={{
-                                backgroundColor: '#f8fafc',
-                                borderRadius: 20,
-                                padding: 36,
-                                alignItems: 'center',
-                            }}
-                        >
-                            <CalendarDays size={40} color="#cbd5e1" />
-                            <Text style={{ color: '#94a3b8', fontSize: 15, fontWeight: '600', marginTop: 12, textAlign: 'center' }}>
-                                No appointments{'\n'}on this date
+                    {displayList.length === 0 ? (
+                        <View style={{
+                            backgroundColor: '#fff', borderRadius: 20, padding: 40,
+                            alignItems: 'center', marginTop: 20,
+                            borderWidth: 1, borderColor: '#f1f5f9'
+                        }}>
+                            <CalendarDays size={48} color="#e2e8f0" />
+                            <Text style={{ color: '#0f172a', fontSize: 16, fontWeight: '700', marginTop: 16 }}>
+                                No appointments found
+                            </Text>
+                            <Text style={{ color: '#64748b', fontSize: 13, marginTop: 6, textAlign: 'center', lineHeight: 20 }}>
+                                You don't have any {activeTab.toLowerCase()} appointments at the moment.
                             </Text>
                         </View>
                     ) : (
-                        appointmentsForDate.map((appt: any) => (
-                            <AppointmentCard key={appt.appointmentId} appt={appt} />
+                        displayList.map((appt: any) => (
+                            <AppointmentCard
+                                key={appt.appointmentId}
+                                appt={appt}
+                                onPress={() => navigateToDetails(appt)}
+                            />
                         ))
-                    )}
-
-                    {/* Upcoming section — shown at bottom of today's view */}
-                    {selectedDate === today && upcomingAppointments.length > 1 && (
-                        <>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 24, marginBottom: 12 }}>
-                                <Text style={{ fontSize: 16, fontWeight: '800', color: '#0f172a' }}>All Upcoming</Text>
-                                <Text style={{ fontSize: 13, color: colors.primary, fontWeight: '600' }}>
-                                    {upcomingAppointments.length} total
-                                </Text>
-                            </View>
-                            {upcomingAppointments.map((appt: any) => (
-                                <AppointmentCard key={appt.appointmentId} appt={appt} />
-                            ))}
-                        </>
                     )}
                 </ScrollView>
             )}

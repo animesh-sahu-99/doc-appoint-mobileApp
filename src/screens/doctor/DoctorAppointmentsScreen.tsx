@@ -1,3 +1,4 @@
+/// <reference types="nativewind/types" />
 import React, { useState, useMemo } from 'react';
 import {
     View,
@@ -103,7 +104,7 @@ function MoreSheet({ visible, onClose, appointment, onAction }: MoreSheetProps) 
     );
 }
 
-export default function DoctorAppointmentsScreen() {
+export default function DoctorAppointmentsScreen({ navigation }: any) {
     const user = useSelector((s: any) => s.auth.user);
     const doctorId: string = user?.doctorId ?? user?.id ?? '';
 
@@ -217,8 +218,10 @@ export default function DoctorAppointmentsScreen() {
                             const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.PENDING;
                             const isActive = ['PENDING', 'CONFIRMED'].includes(status);
                             return (
-                                <View
+                                <TouchableOpacity
                                     key={appt.appointmentId}
+                                    activeOpacity={0.7}
+                                    onPress={() => navigation.navigate('DoctorAppointmentDetails', { appointment: appt })}
                                     className="rounded-xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800 shadow-sm p-4"
                                     style={{ gap: 10 }}
                                 >
@@ -312,7 +315,7 @@ export default function DoctorAppointmentsScreen() {
                                             </TouchableOpacity>
                                         </View>
                                     )}
-                                </View>
+                                </TouchableOpacity>
                             );
                         })
                     )}
@@ -326,6 +329,6 @@ export default function DoctorAppointmentsScreen() {
                 appointment={selectedAppt}
                 onAction={handleAction}
             />
-        </SafeAreaView>
+        </SafeAreaView >
     );
 }

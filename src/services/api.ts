@@ -1,21 +1,48 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { createApi, fetchBaseQuery, BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/query/react';
+
+const baseQuery = fetchBaseQuery({
+  // Use the machine's local IP address instead of 10.0.2.2 for physical device testing
+  baseUrl: 'http://192.168.5.91:9091/api/',
+  prepareHeaders: (headers, { getState }) => {
+    // By default, if we have a token in the store, let's use that for authenticated requests
+    const token = (getState() as any).auth.token;
+    if (token) {
+      headers.set('authorization', `Bearer ${token}`);
+    }
+    return headers;
+  },
+});
+
+const baseQueryWithLogging: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (
+  args,
+  reduxApi,
+  extraOptions
+) => {
+  const url = typeof args === 'string' ? args : args.url;
+  const method = typeof args === 'string' ? 'GET' : args.method || 'GET';
+  const body = typeof args === 'string' ? undefined : args.body;
+
+  console.log(`\n[API CALL] 🚀 ${method} ${url}`);
+  if (body) {
+    console.log(`[API PAYLOAD] 📦`, JSON.stringify(body, null, 2));
+  }
+
+  const result = await baseQuery(args, reduxApi, extraOptions);
+
+  if (result.error) {
+    console.error(`[API ERROR] ❌ ${method} ${url}`, JSON.stringify(result.error, null, 2));
+  } else if (result.data) {
+    console.log(`[API RESPONSE] ✅ ${method} ${url}`, JSON.stringify(result.data, null, 2));
+  }
+
+  return result;
+};
 
 // Define a service using a base URL and expected endpoints
 export const api = createApi({
   reducerPath: 'api',
-  baseQuery: fetchBaseQuery({
-    // Use the machine's local IP address instead of 10.0.2.2 for physical device testing
-    baseUrl: 'http://192.168.5.91:9091/api/',
-    prepareHeaders: (headers, { getState }) => {
-      // By default, if we have a token in the store, let's use that for authenticated requests
-      const token = (getState() as any).auth.token;
-      if (token) {
-        headers.set('authorization', `Bearer ${token}`);
-      }
-      return headers;
-    },
-  }),
-  tagTypes: ['User', 'Doctor', 'Appointment', 'Slot'],
+  baseQuery: baseQueryWithLogging,
+  tagTypes: ['User', 'Doctor', 'Appointment', 'Slot', 'Notification'],
   endpoints: (builder) => ({
     // ── Patient / Doctor Discovery ─────────────────────────────────────────
     getDoctors: builder.query({
@@ -23,6 +50,26 @@ export const api = createApi({
         url: 'doctors',
         params,
       }),
+      providesTags: ['Doctor'],
+    }),
+    /** GET all doctors */
+    getAllDoctors: builder.query<any, void>({
+      query: () => 'doctors',
+      providesTags: ['Doctor'],
+    }),
+    /** GET all specializations (for category chips) */
+    getSpecializations: builder.query<any, void>({
+      query: () => 'doctors/specializations',
+      providesTags: ['Doctor'],
+    }),
+    /** GET doctors filtered by specialization code e.g. CARDIOLOGIST */
+    getDoctorsBySpecialization: builder.query<any, string>({
+      query: (specialization) => `doctors/specialization/${specialization}`,
+      providesTags: ['Doctor'],
+    }),
+    /** GET doctors with available slots filtered by specialization */
+    getAvailableDoctorsBySpecialization: builder.query<any, string>({
+      query: (specialization) => `doctors/available/specialization/${specialization}`,
       providesTags: ['Doctor'],
     }),
     getDoctorById: builder.query({
@@ -35,8 +82,22 @@ export const api = createApi({
       query: (id: string) => `doctors/${id}`,
       providesTags: (result, error, id) => [{ type: 'Doctor', id }],
     }),
+    /** PUT update an authenticated doctor's own profile */
+    updateDoctor: builder.mutation<any, { doctorId: string; data: any }>({
+      query: ({ doctorId, data }) => ({
+        url: `doctors/${doctorId}`,
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: (result, error, { doctorId }) => [{ type: 'Doctor', id: doctorId }, 'Doctor'],
+    }),
 
     // ── Slot Management ────────────────────────────────────────────────────
+    /** GET all slots for a doctor across all dates */
+    getDoctorSlots: builder.query<any, string>({
+      query: (doctorId) => `slots/doctor/${doctorId}`,
+      providesTags: ['Slot'],
+    }),
     /** GET all slots (available + booked) for a doctor on a specific date */
     getAllSlotsByDate: builder.query<any, { doctorId: string; date: string }>({
       query: ({ doctorId, date }) => `slots/doctor/${doctorId}/date/${date}/all`,
@@ -131,7 +192,7 @@ export const api = createApi({
       invalidatesTags: ['Appointment', 'Slot'],
     }),
 
-    // ── Patient-side existing endpoints ────────────────────────────────────
+    // ── Patient ──────────────────────────────────────────────────────────────
     getAppointments: builder.query({
       query: () => 'appointments',
       providesTags: ['Appointment'],
@@ -153,6 +214,20 @@ export const api = createApi({
         body,
       }),
       invalidatesTags: ['Appointment'],
+    }),
+    /** GET Patient Profile */
+    getPatientProfile: builder.query<any, string>({
+      query: (patientId) => `patients/${patientId}`,
+      providesTags: (result, error, id) => [{ type: 'User', id }],
+    }),
+    /** PUT Update Patient Profile */
+    updatePatient: builder.mutation<any, { patientId: string; data: any }>({
+      query: ({ patientId, data }) => ({
+        url: `patients/${patientId}`,
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: (result, error, { patientId }) => [{ type: 'User', id: patientId }],
     }),
 
     // ── Auth ───────────────────────────────────────────────────────────────
@@ -184,16 +259,56 @@ export const api = createApi({
         body: userData,
       }),
     }),
+    
+    // ── Notifications ──────────────────────────────────────────────────────
+    getNotifications: builder.query<any, { page?: number; size?: number }>({
+      query: (params) => ({
+        url: 'notifications',
+        params,
+      }),
+      providesTags: ['Notification'],
+    }),
+    getUnreadNotificationCount: builder.query<any, void>({
+      query: () => 'notifications/unread-count',
+      providesTags: ['Notification'],
+    }),
+    markNotificationAsRead: builder.mutation<any, string>({
+      query: (id) => ({
+        url: `notifications/${id}/read`,
+        method: 'PUT',
+      }),
+      invalidatesTags: ['Notification'],
+    }),
+    markAllNotificationsAsRead: builder.mutation<any, void>({
+      query: () => ({
+        url: 'notifications/read-all',
+        method: 'PUT',
+      }),
+      invalidatesTags: ['Notification'],
+    }),
+    registerDeviceToken: builder.mutation<any, { fcmToken: string; deviceType: string }>({
+      query: (data) => ({
+        url: 'notifications/device-token',
+        method: 'POST',
+        body: data,
+      }),
+    }),
   }),
 });
 
 export const {
   // Discovery
   useGetDoctorsQuery,
+  useGetAllDoctorsQuery,
+  useGetSpecializationsQuery,
+  useGetDoctorsBySpecializationQuery,
+  useGetAvailableDoctorsBySpecializationQuery,
   useGetDoctorByIdQuery,
   // Doctor profile
   useGetDoctorProfileQuery,
+  useUpdateDoctorMutation,
   // Slots
+  useGetDoctorSlotsQuery,
   useGetAllSlotsByDateQuery,
   useGetAvailableSlotsByDateQuery,
   useCreateSlotMutation,
@@ -213,9 +328,17 @@ export const {
   useGetPatientAppointmentsQuery,
   useGetUpcomingPatientAppointmentsQuery,
   useCreateAppointmentMutation,
+  useGetPatientProfileQuery,
+  useUpdatePatientMutation,
   // Auth
   usePatientLoginMutation,
   useDoctorLoginMutation,
   usePatientRegisterMutation,
   useDoctorRegisterMutation,
+  // Notifications
+  useGetNotificationsQuery,
+  useGetUnreadNotificationCountQuery,
+  useMarkNotificationAsReadMutation,
+  useMarkAllNotificationsAsReadMutation,
+  useRegisterDeviceTokenMutation,
 } = api;

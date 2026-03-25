@@ -25,4 +25,9 @@ export type RootStackParamList = {
     DoctorTabs: undefined;
     BookingModal: { doctorId: string };
     DoctorProfile: { doctorId: string };
+    EditPatientProfile: undefined;
+    EditDoctorProfile: undefined;
+    DoctorAppointmentDetails: { appointment: any };
+    PatientAppointmentDetails: { appointment: any };
+    Notifications: undefined;
 };

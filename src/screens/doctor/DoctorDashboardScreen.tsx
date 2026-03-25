@@ -19,6 +19,7 @@ import {
     useCompleteAppointmentMutation,
     useCancelAppointmentMutation,
     useNoShowAppointmentMutation,
+    useGetUnreadNotificationCountQuery,
 } from '../../services/api';
 import { colors } from '../../theme/colors';
 
@@ -55,7 +56,7 @@ const formatTime = (t: string) => {
     return `${hour}:${String(m).padStart(2, '0')} ${ampm}`;
 };
 
-export default function DoctorDashboardScreen() {
+export default function DoctorDashboardScreen({ navigation }: any) {
     const user = useSelector((s: any) => s.auth.user);
     const doctorId: string = user?.doctorId ?? user?.id ?? '';
 
@@ -83,6 +84,9 @@ export default function DoctorDashboardScreen() {
     const [cancelAppt] = useCancelAppointmentMutation();
     const [noShowAppt] = useNoShowAppointmentMutation();
     const [refreshing, setRefreshing] = useState(false);
+
+    const { data: unreadData } = useGetUnreadNotificationCountQuery(undefined);
+    const unreadCount = unreadData?.data?.count ?? 0;
 
     const todayAppointments: any[] = todayApptData?.data ?? [];
     const upcomingAppointments: any[] = upcomingData?.data ?? [];
@@ -123,9 +127,26 @@ export default function DoctorDashboardScreen() {
                         {user?.name ? `Dr. ${user.name}` : 'Doctor Dashboard'}
                     </Text>
                 </View>
-                <TouchableOpacity className="relative w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 items-center justify-center">
+                <TouchableOpacity 
+                    onPress={() => navigation.navigate('Notifications')}
+                    className="relative w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 items-center justify-center"
+                >
                     <Bell size={20} color="#64748b" />
-                    <View className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full" />
+                    {unreadCount > 0 && (
+                        <View 
+                            style={{ 
+                                position: 'absolute', 
+                                top: 8, 
+                                right: 10, 
+                                width: 10, 
+                                height: 10, 
+                                borderRadius: 5, 
+                                backgroundColor: '#ef4444', 
+                                borderWidth: 2, 
+                                borderColor: '#f1f5f9' 
+                            }} 
+                        />
+                    )}
                 </TouchableOpacity>
             </View>
 
@@ -209,9 +230,11 @@ export default function DoctorDashboardScreen() {
                             const status = appt.status as string;
                             const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.PENDING;
                             return (
-                                <View
+                                <TouchableOpacity
                                     key={appt.appointmentId}
-                                    className="rounded-2xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 shadow-sm p-5"
+                                    activeOpacity={0.7}
+                                    onPress={() => navigation.navigate('DoctorAppointmentDetails', { appointment: appt })}
+                                    className="rounded-2xl p-4 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800 shadow-sm"
                                     style={{ gap: 12 }}
                                 >
                                     {/* Top row */}
@@ -294,7 +317,7 @@ export default function DoctorDashboardScreen() {
                                             )}
                                         </View>
                                     </View>
-                                </View>
+                                </TouchableOpacity>
                             );
                         })}
                     </View>

@@ -6,16 +6,16 @@ import AuthStack from './AuthStack';
 import PatientTabNavigator from './PatientTabNavigator';
 import DoctorTabNavigator from './DoctorTabNavigator';
 import AppointmentBookingScreen from '../screens/patient/AppointmentBookingScreen';
+import PatientDoctorProfileScreen from '../screens/patient/PatientDoctorProfileScreen';
+import EditPatientProfileScreen from '../screens/patient/EditPatientProfileScreen';
+import DoctorAppointmentDetailsScreen from '../screens/doctor/DoctorAppointmentDetailsScreen';
+import EditDoctorProfileScreen from '../screens/doctor/EditDoctorProfileScreen';
+import PatientAppointmentDetailsScreen from '../screens/patient/PatientAppointmentDetailsScreen';
+import NotificationsScreen from '../screens/common/NotificationsScreen';
 import { RootState } from '../store/store';
 import { View, Text } from 'react-native';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
-
-const DoctorProfileModal = () => (
-  <View className="flex-1 justify-center items-center bg-white dark:bg-background-dark">
-    <Text className="text-text-primary-light dark:text-text-primary-dark">Doctor Profile Modal</Text>
-  </View>
-);
 
 const RootNavigator = () => {
   const { isAuthenticated, role } = useSelector((state: RootState) => state.auth);
@@ -31,7 +31,12 @@ const RootNavigator = () => {
           )}
           <Stack.Group screenOptions={{ presentation: 'modal' }}>
             <Stack.Screen name="BookingModal" component={AppointmentBookingScreen} />
-            <Stack.Screen name="DoctorProfile" component={DoctorProfileModal} />
+            <Stack.Screen name="DoctorProfile" component={PatientDoctorProfileScreen} />
+            <Stack.Screen name="EditPatientProfile" component={EditPatientProfileScreen} />
+            <Stack.Screen name="DoctorAppointmentDetails" component={DoctorAppointmentDetailsScreen} />
+            <Stack.Screen name="EditDoctorProfile" component={EditDoctorProfileScreen} />
+            <Stack.Screen name="PatientAppointmentDetails" component={PatientAppointmentDetailsScreen} />
+            <Stack.Screen name="Notifications" component={NotificationsScreen} />
           </Stack.Group>
         </>
       ) : (

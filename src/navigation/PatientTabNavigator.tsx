@@ -5,12 +5,12 @@ import { Home, Search, Calendar, User } from 'lucide-react-native';
 import { PatientTabParamList } from './types';
 import HomeScreen from '../screens/patient/HomeScreen';
 import PatientScheduleScreen from '../screens/patient/PatientScheduleScreen';
+import PatientProfileScreen from '../screens/patient/PatientProfileScreen';
 
 const Tab = createBottomTabNavigator<PatientTabParamList>();
 
 // Placeholders for other screens
 const SearchScreen = () => <View className="flex-1 justify-center items-center bg-white dark:bg-background-dark"><Text className="text-text-primary-light dark:text-text-primary-dark">Search</Text></View>;
-const ProfileScreen = () => <View className="flex-1 justify-center items-center bg-white dark:bg-background-dark"><Text className="text-text-primary-light dark:text-text-primary-dark">Profile</Text></View>;
 
 const PatientTabNavigator = () => {
   return (
@@ -52,7 +52,7 @@ const PatientTabNavigator = () => {
       />
       <Tab.Screen
         name="Profile"
-        component={ProfileScreen}
+        component={PatientProfileScreen}
         options={{
           tabBarIcon: ({ color, size }) => <User color={color} size={size} />,
           tabBarLabel: 'Profile',

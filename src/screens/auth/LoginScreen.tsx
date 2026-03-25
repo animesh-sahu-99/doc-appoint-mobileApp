@@ -1,3 +1,4 @@
+/// <reference types="nativewind/types" />
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
@@ -47,8 +48,6 @@ const LoginScreen = () => {
 
       if (response && response.success && response.data) {
         const { token, userId, email, name } = response.data;
-
-        await storage.setToken(token);
 
         // Build a normalized user object from the flat AuthResponse fields.
         // doctorId / patientId both map to userId coming from the backend.

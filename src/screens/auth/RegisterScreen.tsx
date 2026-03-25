@@ -1,3 +1,4 @@
+/// <reference types="nativewind/types" />
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert, Modal } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
