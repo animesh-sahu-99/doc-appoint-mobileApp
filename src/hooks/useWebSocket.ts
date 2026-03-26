@@ -23,6 +23,8 @@ export const useWebSocket = () => {
   const user = useSelector((state: RootState) => state.auth.user);
   const clientRef = useRef<Client | null>(null);
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
+  // Debounce: ignore foreground events within 3s of each other
+  const lastForegroundRef = useRef<number>(0);
 
   // ── Build and activate a fresh STOMP client ─────────────────────────────────
   const connect = useCallback(() => {
@@ -100,6 +102,11 @@ export const useWebSocket = () => {
         (prev === 'background' || prev === 'inactive') &&
         nextState === 'active'
       ) {
+        const now = Date.now();
+        if (now - lastForegroundRef.current < 3000) {
+          return; // Debounce: ignore duplicate foreground events within 3s
+        }
+        lastForegroundRef.current = now;
         console.log('[WS] 📱 App foregrounded — forcing WebSocket reconnect.');
         connect();
       }
