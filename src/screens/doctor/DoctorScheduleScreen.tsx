@@ -1,5 +1,5 @@
 /// <reference types="nativewind/types" />
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import {
     View,
     Text,
@@ -10,9 +10,10 @@ import {
     TextInput,
     Alert,
     RefreshControl,
+    FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Plus, Layers, Trash2, X, Clock, CalendarDays } from 'lucide-react-native';
+import { Plus, Layers, Trash2, X, Clock, CalendarDays, Calendar as CalendarIcon, ChevronDown } from 'lucide-react-native';
 import { useSelector } from 'react-redux';
 import {
     useGetAllSlotsByDateQuery,
@@ -26,23 +27,29 @@ import { formatTime } from '../../utils/formatters';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Returns 14 day objects starting from today */
-const buildDays = () => {
+const getTodayStr = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+/** Returns 14 day objects starting from startDateStr */
+const buildDays = (startDateStr: string) => {
     const days: { dateStr: string; dayNum: number; dayName: string }[] = [];
-    for (let i = 0; i < 14; i++) {
-        const d = new Date();
-        d.setDate(d.getDate() + i);
-        const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const [y, m, d] = startDateStr.split('-').map(Number);
+    if (!y || !m || !d) return [];
+
+    // Generate 14 past days + 1 selected + 14 future days (29 total)
+    for (let i = -14; i <= 14; i++) {
+        const dateObj = new Date(y, m - 1, d + i);
+        const dateStr = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
         days.push({
             dateStr,
-            dayNum: d.getDate(),
-            dayName: d.toLocaleDateString('en-US', { weekday: 'short' }),
+            dayNum: dateObj.getDate(),
+            dayName: dateObj.toLocaleDateString('en-US', { weekday: 'short' }),
         });
     }
     return days;
 };
-
-const DAYS = buildDays();
 
 
 
@@ -382,10 +389,36 @@ export default function DoctorScheduleScreen() {
     const user = useSelector((s: any) => s.auth.user);
     const doctorId: string = user?.doctorId ?? user?.id ?? '';
 
-    const [selectedDate, setSelectedDate] = useState(DAYS[0].dateStr);
+    const [selectedDate, setSelectedDate] = useState(() => getTodayStr());
+    const [stripStartDate, setStripStartDate] = useState(() => getTodayStr());
     const [showSingle, setShowSingle] = useState(false);
     const [showBulk, setShowBulk] = useState(false);
+    const [showCalendarModal, setShowCalendarModal] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
+
+    const flatListRef = useRef<FlatList>(null);
+    const dynamicDays = useMemo(() => buildDays(stripStartDate), [stripStartDate]);
+
+    // Whenever the calendar picker changes the strip's center date, scroll the list back to center (index 14)
+    useEffect(() => {
+        setTimeout(() => {
+            flatListRef.current?.scrollToIndex({ index: 14, animated: true, viewPosition: 0.5 });
+        }, 100);
+    }, [stripStartDate]);
+
+    // Month/Year picker state
+    const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const YEARS = Array.from({ length: 201 }, (_, i) => 1900 + i); // 1900–2100
+    const parsedSelected = new Date(selectedDate + 'T12:00:00');
+    const [pickerMonth, setPickerMonth] = useState(parsedSelected.getMonth());
+    const [pickerYear, setPickerYear] = useState(parsedSelected.getFullYear());
+
+    const applyMonthYear = () => {
+        const dateStr = `${pickerYear}-${String(pickerMonth + 1).padStart(2, '0')}-01`;
+        setSelectedDate(dateStr);
+        setStripStartDate(dateStr);
+        setShowCalendarModal(false);
+    };
 
     const { data: slotsData, isLoading, refetch } = useGetAllSlotsByDateQuery(
         { doctorId, date: selectedDate },
@@ -443,25 +476,42 @@ export default function DoctorScheduleScreen() {
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc' }}>
             {/* Header */}
-            <View style={{ backgroundColor: '#fff', paddingHorizontal: 20, paddingTop: 12, paddingBottom: 4, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' }}>
-                <Text style={{ fontSize: 20, fontWeight: '800', color: '#0f172a', textAlign: 'center' }}>Schedule</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#fff', paddingHorizontal: 20, paddingTop: 12, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' }}>
+                <Text style={{ fontSize: 20, fontWeight: '800', color: '#0f172a' }}>Schedule</Text>
+                
+                <TouchableOpacity 
+                    onPress={() => setShowCalendarModal(true)}
+                    style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: `${colors.primary}10`, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20 }}
+                >
+                    <CalendarIcon size={16} color={colors.primary} />
+                    <Text style={{ color: colors.primary, fontWeight: '700', fontSize: 13 }}>
+                        {new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                    </Text>
+                    <ChevronDown size={14} color={colors.primary} />
+                </TouchableOpacity>
             </View>
 
             {/* Date strip */}
             <View style={{ backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f1f5f9' }}>
-                <ScrollView
+                <FlatList
+                    ref={flatListRef}
                     horizontal
                     showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 12, gap: 8 }}
-                >
-                    {DAYS.map(day => {
+                    data={dynamicDays}
+                    keyExtractor={item => item.dateStr}
+                    contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 12 }}
+                    initialScrollIndex={14}
+                    getItemLayout={(_, index) => ({ length: 60, offset: 60 * index, index })}
+                    renderItem={({ item: day, index }) => {
                         const isSelected = day.dateStr === selectedDate;
+                        // Add margin right except on the last item to act like gap parameter
+                        const isLast = index === dynamicDays.length - 1;
                         return (
                             <TouchableOpacity
-                                key={day.dateStr}
                                 onPress={() => setSelectedDate(day.dateStr)}
                                 style={{
                                     width: 52, height: 64, borderRadius: 14, alignItems: 'center', justifyContent: 'center',
+                                    marginRight: isLast ? 0 : 8,
                                     backgroundColor: isSelected ? colors.primary : '#f8fafc',
                                     shadowColor: isSelected ? colors.primary : 'transparent',
                                     shadowOpacity: 0.3, shadowRadius: 6, elevation: isSelected ? 4 : 0,
@@ -475,8 +525,8 @@ export default function DoctorScheduleScreen() {
                                 </Text>
                             </TouchableOpacity>
                         );
-                    })}
-                </ScrollView>
+                    }}
+                />
             </View>
 
             {/* Stats bar */}
@@ -636,6 +686,83 @@ export default function DoctorScheduleScreen() {
                 selectedDate={selectedDate}
                 onCreate={refetch}
             />
+
+            {/* Pure-JS Month/Year Picker Modal */}
+            <Modal visible={showCalendarModal} transparent animationType="slide" onRequestClose={() => setShowCalendarModal(false)}>
+                <TouchableOpacity activeOpacity={1} onPress={() => setShowCalendarModal(false)} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
+                    <TouchableOpacity activeOpacity={1} style={{ backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 36 }}>
+                        {/* Handle + Title */}
+                        <View style={{ alignItems: 'center', paddingTop: 12, paddingBottom: 8 }}>
+                            <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: '#e2e8f0', marginBottom: 12 }} />
+                            <Text style={{ fontSize: 16, fontWeight: '800', color: '#0f172a' }}>Jump to Month</Text>
+                        </View>
+                        <View style={{ height: 1, backgroundColor: '#f1f5f9', marginBottom: 8 }} />
+
+                        {/* Two-column picker */}
+                        <View style={{ flexDirection: 'row', height: 240 }}>
+                            {/* Month column */}
+                            <FlatList
+                                style={{ flex: 1 }}
+                                data={MONTHS}
+                                keyExtractor={(_, i) => String(i)}
+                                showsVerticalScrollIndicator={false}
+                                contentContainerStyle={{ paddingVertical: 8 }}
+                                renderItem={({ item, index }) => (
+                                    <TouchableOpacity
+                                        onPress={() => setPickerMonth(index)}
+                                        style={{
+                                            paddingVertical: 12, paddingHorizontal: 16, marginHorizontal: 8, borderRadius: 10,
+                                            backgroundColor: pickerMonth === index ? `${colors.primary}15` : 'transparent',
+                                        }}
+                                    >
+                                        <Text style={{ fontSize: 15, fontWeight: pickerMonth === index ? '800' : '500', color: pickerMonth === index ? colors.primary : '#475569', textAlign: 'center' }}>
+                                            {item}
+                                        </Text>
+                                    </TouchableOpacity>
+                                )}
+                            />
+
+                            {/* Divider */}
+                            <View style={{ width: 1, backgroundColor: '#f1f5f9', marginVertical: 12 }} />
+
+                            {/* Year column — scrollable 1900-2100 */}
+                            <FlatList
+                                style={{ flex: 0.6 }}
+                                data={YEARS}
+                                keyExtractor={item => String(item)}
+                                showsVerticalScrollIndicator={false}
+                                contentContainerStyle={{ paddingVertical: 8 }}
+                                initialScrollIndex={Math.max(0, YEARS.indexOf(pickerYear))}
+                                getItemLayout={(_, index) => ({ length: 44, offset: 44 * index, index })}
+                                renderItem={({ item }) => (
+                                    <TouchableOpacity
+                                        onPress={() => setPickerYear(item)}
+                                        style={{
+                                            height: 44, paddingHorizontal: 10, marginHorizontal: 8, borderRadius: 10,
+                                            alignItems: 'center', justifyContent: 'center',
+                                            backgroundColor: pickerYear === item ? `${colors.primary}15` : 'transparent',
+                                        }}
+                                    >
+                                        <Text style={{ fontSize: 15, fontWeight: pickerYear === item ? '800' : '500', color: pickerYear === item ? colors.primary : '#475569', textAlign: 'center' }}>
+                                            {item}
+                                        </Text>
+                                    </TouchableOpacity>
+                                )}
+                            />
+                        </View>
+
+                        {/* Apply button */}
+                        <TouchableOpacity
+                            onPress={applyMonthYear}
+                            style={{ backgroundColor: colors.primary, marginHorizontal: 20, marginTop: 12, borderRadius: 14, height: 50, alignItems: 'center', justifyContent: 'center' }}
+                        >
+                            <Text style={{ color: '#fff', fontWeight: '800', fontSize: 15 }}>
+                                Go to {MONTHS[pickerMonth]} {pickerYear}
+                            </Text>
+                        </TouchableOpacity>
+                    </TouchableOpacity>
+                </TouchableOpacity>
+            </Modal>
         </SafeAreaView>
     );
 }

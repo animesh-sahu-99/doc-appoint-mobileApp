@@ -1,4 +1,5 @@
 import { createApi, fetchBaseQuery, BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/query/react';
+import { markSessionExpired } from '../store/slices/authSlice';
 
 const baseQuery = fetchBaseQuery({
   // Use the machine's local IP address instead of 10.0.2.2 for physical device testing
@@ -31,6 +32,14 @@ const baseQueryWithLogging: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQu
 
   if (result.error) {
     console.error(`[API ERROR] ❌ ${method} ${url}`, JSON.stringify(result.error, null, 2));
+
+    // ── Global 401 handler: JWT expired or invalid ────────────────────────
+    if (result.error.status === 401) {
+      console.warn('[API] 🔒 401 Unauthorized — session expired, logging out.');
+      reduxApi.dispatch(markSessionExpired());
+      // Also wipe all cached RTK Query data so stale data isn't shown after re-login
+      reduxApi.dispatch(api.util.resetApiState());
+    }
   } else if (result.data) {
     console.log(`[API RESPONSE] ✅ ${method} ${url}`, JSON.stringify(result.data, null, 2));
   }

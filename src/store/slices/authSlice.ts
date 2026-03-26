@@ -7,6 +7,7 @@ interface AuthState {
   token: string | null;
   role: UserRole;
   isAuthenticated: boolean;
+  sessionExpired: boolean;
 }
 
 const initialState: AuthState = {
@@ -14,6 +15,7 @@ const initialState: AuthState = {
   token: null,
   role: null,
   isAuthenticated: false,
+  sessionExpired: false,
 };
 
 const authSlice = createSlice({
@@ -35,6 +37,14 @@ const authSlice = createSlice({
       state.token = null;
       state.role = null;
       state.isAuthenticated = false;
+      state.sessionExpired = false;
+    },
+    markSessionExpired: (state) => {
+      state.user = null;
+      state.token = null;
+      state.role = null;
+      state.isAuthenticated = false;
+      state.sessionExpired = true;
     },
     setRole: (state, action: PayloadAction<UserRole>) => {
       state.role = action.payload;
@@ -42,5 +52,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { setCredentials, logout, setRole } = authSlice.actions;
+export const { setCredentials, logout, setRole, markSessionExpired } = authSlice.actions;
 export default authSlice.reducer;
