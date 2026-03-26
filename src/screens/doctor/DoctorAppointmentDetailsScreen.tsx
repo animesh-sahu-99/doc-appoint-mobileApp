@@ -29,6 +29,7 @@ import {
     useCancelAppointmentMutation,
     useNoShowAppointmentMutation,
     useConfirmAppointmentMutation,
+    useGetAppointmentByIdQuery,
 } from '../../services/api';
 import { colors } from '../../theme/colors';
 
@@ -67,8 +68,19 @@ function calculateAge(dobStr: string) {
 }
 
 export default function DoctorAppointmentDetailsScreen({ route, navigation }: any) {
-    const { appointment } = route.params;
-    const { patientId, appointmentId, status: originalStatus } = appointment;
+    const { appointment: appointmentParam } = route.params;
+
+    // If navigated from a notification, we only have { id }. Fetch the full object in that case.
+    const isIdOnly = appointmentParam && Object.keys(appointmentParam).length === 1 && appointmentParam.id;
+    const { data: fetchedApptRes, isLoading: isLoadingAppt } = useGetAppointmentByIdQuery(
+        appointmentParam?.id ?? '',
+        { skip: !isIdOnly }
+    );
+
+    // Use the fetched data when navigated from notification, otherwise use the passed full object
+    const appointment = isIdOnly ? (fetchedApptRes?.data ?? null) : appointmentParam;
+
+    const { patientId, appointmentId, status: originalStatus } = appointment ?? {};
 
     // Fetch Patient Details
     const { data: profileRes, isLoading: loadingProfile } = useGetPatientProfileQuery(patientId, { skip: !patientId });
@@ -84,6 +96,15 @@ export default function DoctorAppointmentDetailsScreen({ route, navigation }: an
             .filter(a => a.appointmentId !== appointmentId)
             .sort((a, b) => new Date(b.appointmentDate).getTime() - new Date(a.appointmentDate).getTime());
     }, [historyData, appointmentId]);
+
+    // Show loading spinner while fetching a notification deep-linked appointment
+    if (isIdOnly && isLoadingAppt) {
+        return (
+            <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc', alignItems: 'center', justifyContent: 'center' }}>
+                <ActivityIndicator size="large" color={colors.primary} />
+            </SafeAreaView>
+        );
+    }
 
     // Mutations
     const [confirmAppt, { isLoading: isConfirming }] = useConfirmAppointmentMutation();

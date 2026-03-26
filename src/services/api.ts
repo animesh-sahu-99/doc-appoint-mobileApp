@@ -101,6 +101,13 @@ export const api = createApi({
       invalidatesTags: (result, error, { doctorId }) => [{ type: 'Doctor', id: doctorId }, 'Doctor'],
     }),
 
+    // ── Single Appointment by ID ────────────────────────────────────────────
+    /** GET a single appointment by its ID – used for notification deep-links */
+    getAppointmentById: builder.query<any, string>({
+      query: (appointmentId) => `appointments/${appointmentId}`,
+      providesTags: (result, error, id) => [{ type: 'Appointment', id }],
+    }),
+
     // ── Slot Management ────────────────────────────────────────────────────
     /** GET all slots for a doctor across all dates */
     getDoctorSlots: builder.query<any, string>({
@@ -328,6 +335,7 @@ export const {
   useGetDoctorAppointmentsQuery,
   useGetUpcomingDoctorAppointmentsQuery,
   useGetDoctorAppointmentsByDateQuery,
+  useGetAppointmentByIdQuery,
   useConfirmAppointmentMutation,
   useCancelAppointmentMutation,
   useCompleteAppointmentMutation,

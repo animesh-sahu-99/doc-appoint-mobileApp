@@ -1,20 +1,45 @@
 import { useEffect } from 'react';
 import { Platform, PermissionsAndroid } from 'react-native';
-import messaging from '@react-native-firebase/messaging';
+import messaging, { FirebaseMessagingTypes } from '@react-native-firebase/messaging';
 import { useSelector } from 'react-redux';
+import { NavigationContainerRef } from '@react-navigation/native';
 import { useRegisterDeviceTokenMutation } from '../services/api';
 import Toast from 'react-native-toast-message';
 
+type NavRef = React.RefObject<NavigationContainerRef<any>>;
+
+/**
+ * Navigates to the appropriate appointment detail screen based on the
+ * FCM notification data payload (type + relatedEntityId) and the user's role.
+ */
+const handleNotificationNavigation = (
+  remoteMessage: FirebaseMessagingTypes.RemoteMessage,
+  navRef: NavRef,
+  role: string | null
+) => {
+  const appointmentId = remoteMessage?.data?.relatedEntityId as string | undefined;
+  if (!appointmentId || !navRef.current) return;
+
+  console.log('[FCM] 🔔 Notification tapped — appointmentId:', appointmentId, '| role:', role);
+
+  if (role === 'DOCTOR') {
+    navRef.current.navigate('DoctorAppointmentDetails' as never, { appointment: { id: appointmentId } } as never);
+  } else {
+    navRef.current.navigate('PatientAppointmentDetails' as never, { appointment: { id: appointmentId } } as never);
+  }
+};
+
 /**
  * Custom hook to abstract the Firebase Cloud Messaging logic.
- * Call this hook inside a protected root component (e.g. App.tsx or a layout after auth).
+ * Accepts a navRef so it can deep-link to the relevant appointment on tap.
  */
-export const usePushNotifications = () => {
+export const usePushNotifications = (navRef?: NavRef) => {
   const user = useSelector((state: any) => state.auth.user);
+  const role = useSelector((state: any) => state.auth.role);
   const [registerDeviceToken] = useRegisterDeviceTokenMutation();
 
   useEffect(() => {
-    if (!user) return; // Only request / sink tokens if user is logged in
+    if (!user) return;
 
     const requestUserPermission = async () => {
       if (Platform.OS === 'android' && Platform.Version >= 33) {
@@ -44,7 +69,6 @@ export const usePushNotifications = () => {
         if (token) {
           const deviceType = Platform.OS === 'ios' ? 'IOS' : 'ANDROID';
           console.log(`FCM Token retrieved for ${deviceType}:`, token);
-          
           await registerDeviceToken({ fcmToken: token, deviceType }).unwrap();
           console.log('Successfully registered FCM token with backend.');
         }
@@ -53,7 +77,7 @@ export const usePushNotifications = () => {
       }
     };
 
-    // Listen to token refreshes automatically
+    // ── Token refresh ─────────────────────────────────────────────────────────
     const unsubscribeTokenRefresh = messaging().onTokenRefresh(async (token) => {
       const deviceType = Platform.OS === 'ios' ? 'IOS' : 'ANDROID';
       try {
@@ -63,10 +87,9 @@ export const usePushNotifications = () => {
       }
     });
 
-    // Handle Foreground Messages (when the app is actively OPEN)
-    // Android OS does NOT show system drawer notifications when the app is open!
+    // ── Foreground: app is OPEN — show Toast (Android won't show system notif) ─
     const unsubscribeForeground = messaging().onMessage(async remoteMessage => {
-      console.log('FCM Message received in the foreground!', remoteMessage);
+      console.log('[FCM] Foreground message received:', remoteMessage);
       if (remoteMessage.notification) {
         Toast.show({
           type: 'info',
@@ -74,7 +97,28 @@ export const usePushNotifications = () => {
           text2: remoteMessage.notification.body,
           visibilityTime: 4000,
           position: 'top',
+          onPress: () => {
+            // Tapping the in-app Toast also navigates
+            if (navRef) handleNotificationNavigation(remoteMessage, navRef, role);
+          },
         });
+      }
+    });
+
+    // ── Background: app is OPEN in background, user taps the OS notification ──
+    const unsubscribeBackground = messaging().onNotificationOpenedApp(remoteMessage => {
+      console.log('[FCM] Background notification tapped:', remoteMessage);
+      if (navRef) handleNotificationNavigation(remoteMessage, navRef, role);
+    });
+
+    // ── Quit state: app was KILLED, user taps notification to open it ─────────
+    messaging().getInitialNotification().then(remoteMessage => {
+      if (remoteMessage) {
+        console.log('[FCM] App opened from quit state via notification:', remoteMessage);
+        // Small delay to let the navigator fully mount before trying to navigate
+        setTimeout(() => {
+          if (navRef) handleNotificationNavigation(remoteMessage, navRef, role);
+        }, 1000);
       }
     });
 
@@ -83,6 +127,8 @@ export const usePushNotifications = () => {
     return () => {
       unsubscribeTokenRefresh();
       unsubscribeForeground();
+      unsubscribeBackground();
     };
-  }, [user, registerDeviceToken]);
+  }, [user, role, navRef, registerDeviceToken]);
 };
+

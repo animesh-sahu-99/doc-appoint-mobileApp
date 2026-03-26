@@ -23,7 +23,7 @@ import {
     UserMinus,
     Hash,
 } from 'lucide-react-native';
-import { useCancelAppointmentMutation } from '../../services/api';
+import { useCancelAppointmentMutation, useGetAppointmentByIdQuery } from '../../services/api';
 import { colors } from '../../theme/colors';
 import { formatDateLabel as formatDate, formatTime, formatCreatedAt } from '../../utils/formatters';
 
@@ -84,8 +84,28 @@ function SectionCard({ title, children }: { title: string; children: React.React
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function PatientAppointmentDetailsScreen({ route, navigation }: any) {
-    const { appointment } = route.params;
-    const status: string = appointment.status;
+    const { appointment: appointmentParam } = route.params;
+
+    // If navigated from a notification, we only have { id }. Fetch the full object in that case.
+    const isIdOnly = appointmentParam && Object.keys(appointmentParam).length === 1 && appointmentParam.id;
+    const { data: fetchedApptRes, isLoading: isLoadingAppt } = useGetAppointmentByIdQuery(
+        appointmentParam?.id ?? '',
+        { skip: !isIdOnly }
+    );
+
+    // Use the fetched data when navigated from a notification, otherwise use the passed full object
+    const appointment = isIdOnly ? (fetchedApptRes?.data ?? null) : appointmentParam;
+
+    // Show loading spinner while fetching a notification deep-linked appointment
+    if (isIdOnly && isLoadingAppt) {
+        return (
+            <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc', alignItems: 'center', justifyContent: 'center' }}>
+                <ActivityIndicator size="large" color={colors.primary} />
+            </SafeAreaView>
+        );
+    }
+
+    const status: string = appointment?.status ?? 'PENDING';
     const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.PENDING;
     const StatusIcon = cfg.icon;
 

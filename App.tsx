@@ -11,9 +11,9 @@ import { useWebSocket } from './src/hooks/useWebSocket';
 import { usePushNotifications } from './src/hooks/usePushNotifications';
 import { logout } from './src/store/slices/authSlice';
 
-const GlobalServices = () => {
+const GlobalServices = ({ navRef }: { navRef: React.RefObject<NavigationContainerRef<any>> }) => {
   useWebSocket();
-  usePushNotifications();
+  usePushNotifications(navRef);
   return null;
 };
 
@@ -53,7 +53,7 @@ export default function App() {
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
         <SafeAreaProvider>
-          <GlobalServices />
+          <GlobalServices navRef={navRef} />
           <NavigationContainer ref={navRef}>
             <SessionGuard navRef={navRef} />
             <RootNavigator />
