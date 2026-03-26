@@ -1,9 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
+import { AppState, AppStateStatus } from 'react-native';
 import { Client } from '@stomp/stompjs';
 import * as TextEncoding from 'text-encoding';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../store';
-import { api } from '../services/api'; // Adjust path if needed
+import { api } from '../services/api';
 import Toast from 'react-native-toast-message';
 
 // Make TextEncoder available globally for stompjs in React Native
@@ -21,15 +22,16 @@ export const useWebSocket = () => {
   const token = useSelector((state: RootState) => state.auth.token);
   const user = useSelector((state: RootState) => state.auth.user);
   const clientRef = useRef<Client | null>(null);
+  const appStateRef = useRef<AppStateStatus>(AppState.currentState);
 
-  useEffect(() => {
-    // Only connect if user is logged in
-    if (!token || !user) {
-      if (clientRef.current) {
-        clientRef.current.deactivate();
-        clientRef.current = null;
-      }
-      return;
+  // ── Build and activate a fresh STOMP client ─────────────────────────────────
+  const connect = useCallback(() => {
+    if (!token || !user) return;
+
+    // Tear down any existing connection cleanly before creating a new one
+    if (clientRef.current) {
+      clientRef.current.deactivate();
+      clientRef.current = null;
     }
 
     const client = new Client({
@@ -37,61 +39,96 @@ export const useWebSocket = () => {
       connectHeaders: {
         Authorization: `Bearer ${token}`,
       },
-      debug: function (str) {
-        // console.log('[STOMP] ' + str);
-      },
+      debug: () => { /* suppress verbose STOMP logs */ },
+      // STOMP-level auto-reconnect: retries every 5s if the broker drops mid-session
       reconnectDelay: 5000,
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
     });
 
-    client.onConnect = function (frame) {
-      console.log('[STOMP] Connected gracefully for user: ' + user.id);
-      
-      // Subscribe to exactly the user's notification queue
+    client.onConnect = () => {
+      console.log('[WS] ✅ Connected — user:', user.id);
+
       client.subscribe('/user/queue/notifications', (message) => {
-        if (message.body) {
-          try {
-            const notification = JSON.parse(message.body);
-            
-            // 1. Show Toast
-            Toast.show({
-              type: 'success', // Could change based on notification.type
-              text1: notification.title,
-              text2: notification.message,
-              position: 'top',
-              visibilityTime: 4000,
-            });
+        if (!message.body) return;
+        try {
+          const notification = JSON.parse(message.body);
 
-            // 2. Refresh RTK Query notification cache (updates Bell icon badge)
-            dispatch(api.util.invalidateTags(['Notification']));
-            
-            // 3. Optional: Invalidate appointment cache so schedule screens refresh automatically
-            dispatch(api.util.invalidateTags(['Appointment']));
+          Toast.show({
+            type: 'success',
+            text1: notification.title,
+            text2: notification.message,
+            position: 'top',
+            visibilityTime: 4000,
+          });
 
-          } catch (e) {
-            console.error('Failed to parse STOMP message:', e);
-          }
+          dispatch(api.util.invalidateTags(['Notification']));
+          dispatch(api.util.invalidateTags(['Appointment']));
+        } catch (e) {
+          console.error('[WS] Failed to parse message:', e);
         }
       });
     };
 
-    client.onStompError = function (frame) {
-      console.error('[STOMP] Broker reported error: ' + frame.headers['message']);
-      console.error('[STOMP] Additional details: ' + frame.body);
+    client.onDisconnect = () => {
+      console.warn('[WS] ⚠️ Disconnected — STOMP will auto-retry in 5s if token is still valid.');
+    };
+
+    client.onStompError = (frame) => {
+      console.error('[WS] ❌ STOMP error:', frame.headers['message'], frame.body);
+    };
+
+    client.onWebSocketClose = (event) => {
+      console.warn('[WS] 🔌 WebSocket closed — code:', event.code, 'reason:', event.reason || 'unknown');
+    };
+
+    client.onWebSocketError = (event) => {
+      console.error('[WS] 🚨 WebSocket error:', event);
     };
 
     client.activate();
     clientRef.current = client;
+  }, [token, user, dispatch]);
 
-    // Cleanup on unmount or logout
+  // ── AppState listener: re-connect when app comes back to foreground ─────────
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextState: AppStateStatus) => {
+      const prev = appStateRef.current;
+      appStateRef.current = nextState;
+
+      if (
+        (prev === 'background' || prev === 'inactive') &&
+        nextState === 'active'
+      ) {
+        console.log('[WS] 📱 App foregrounded — forcing WebSocket reconnect.');
+        connect();
+      }
+    });
+
+    return () => subscription.remove();
+  }, [connect]);
+
+  // ── Initial connect / disconnect on login/logout ────────────────────────────
+  useEffect(() => {
+    if (token && user) {
+      connect();
+    } else {
+      // User logged out: tear down the connection
+      if (clientRef.current) {
+        clientRef.current.deactivate();
+        clientRef.current = null;
+        console.log('[WS] 🔒 Disconnected — user logged out.');
+      }
+    }
+
     return () => {
       if (clientRef.current) {
         clientRef.current.deactivate();
         clientRef.current = null;
       }
     };
-  }, [token, user?.id, dispatch]);
+  }, [token, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return null; // This is a logic-only hook
+  return null;
 };
+
