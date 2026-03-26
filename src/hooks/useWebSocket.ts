@@ -25,6 +25,8 @@ export const useWebSocket = () => {
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
   // Debounce: ignore foreground events within 3s of each other
   const lastForegroundRef = useRef<number>(0);
+  // Flag to suppress expected 1006 errors when WE intentionally tear down the old connection
+  const isIntentionalDisconnectRef = useRef<boolean>(false);
 
   // ── Build and activate a fresh STOMP client ─────────────────────────────────
   const connect = useCallback(() => {
@@ -32,8 +34,11 @@ export const useWebSocket = () => {
 
     // Tear down any existing connection cleanly before creating a new one
     if (clientRef.current) {
+      isIntentionalDisconnectRef.current = true;
       clientRef.current.deactivate();
       clientRef.current = null;
+      // Reset the flag after a short delay (longer than STOMP teardown cycle)
+      setTimeout(() => { isIntentionalDisconnectRef.current = false; }, 1000);
     }
 
     const client = new Client({
@@ -81,11 +86,20 @@ export const useWebSocket = () => {
     };
 
     client.onWebSocketClose = (event) => {
-      console.warn('[WS] 🔌 WebSocket closed — code:', event.code, 'reason:', event.reason || 'unknown');
+      // Code 1000 = intentional close by us; 1006 = OS killed socket (expected on background)
+      if (isIntentionalDisconnectRef.current || event.code === 1000 || event.code === 1006) {
+        console.log('[WS] WebSocket closed (expected) — code:', event.code);
+      } else {
+        console.warn('[WS] 🔌 WebSocket closed unexpectedly — code:', event.code, 'reason:', event.reason || 'unknown');
+      }
     };
 
     client.onWebSocketError = (event) => {
-      console.error('[WS] 🚨 WebSocket error:', event);
+      if (isIntentionalDisconnectRef.current) {
+        console.log('[WS] WebSocket error during intentional reconnect (suppressed)');
+      } else {
+        console.error('[WS] 🚨 WebSocket error:', event);
+      }
     };
 
     client.activate();
