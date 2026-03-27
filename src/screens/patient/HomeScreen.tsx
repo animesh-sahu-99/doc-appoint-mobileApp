@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -30,12 +30,12 @@ import {
 import { useSelector } from 'react-redux';
 import {
   useGetSpecializationsQuery,
-  useGetAllDoctorsQuery,
-  useGetDoctorsBySpecializationQuery,
   useGetUpcomingPatientAppointmentsQuery,
   useGetUnreadNotificationCountQuery,
+  useSearchDoctorsQuery,
 } from '../../services/api';
 import { colors } from '../../theme/colors';
+import { FilterBottomSheet, FilterState } from './components/FilterBottomSheet';
 
 // ─── Specialization icon map ──────────────────────────────────────────────────
 const SPEC_ICONS: Record<string, React.ReactNode> = {
@@ -184,45 +184,57 @@ export default function HomeScreen({ navigation }: any) {
   const user = useSelector((s: any) => s.auth.user);
   const patientId: string = user?.patientId ?? user?.id ?? '';
 
-  const [selectedSpec, setSelectedSpec] = useState<string | null>(null); // null = All
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  const [filters, setFilters] = useState<FilterState>({
+    specialization: null,
+    minFee: null,
+    maxFee: null,
+    minExperience: null,
+    availableOnly: false,
+  });
+
+  // Debounce search text
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [search]);
+
+  // Combine search + structured filters for the API query
+  const apiFilters = useMemo(() => {
+    const payload: any = { ...filters };
+    if (debouncedSearch.trim()) payload.name = debouncedSearch.trim();
+    // Remove nulls so RTK/Axios doesn't send "minFee=null"
+    Object.keys(payload).forEach(key => {
+      if (payload[key] === null) delete payload[key];
+    });
+    return payload;
+  }, [filters, debouncedSearch]);
 
   // API calls
   const { data: specsData, isLoading: loadingSpecs } = useGetSpecializationsQuery();
-  const { data: allDoctorsData, isLoading: loadingDoctors, refetch: refetchDoctors } = useGetAllDoctorsQuery();
-  const { data: filteredData, isLoading: loadingFiltered } = useGetDoctorsBySpecializationQuery(
-    selectedSpec ?? '',
-    { skip: !selectedSpec }
-  );
+  const { data: searchData, isLoading: loadingSearch, refetch: refetchSearch, isFetching } = useSearchDoctorsQuery(apiFilters);
   const { data: upcomingData } = useGetUpcomingPatientAppointmentsQuery(patientId, { skip: !patientId });
   const { data: unreadData } = useGetUnreadNotificationCountQuery(undefined);
 
   const specializations: any[] = specsData?.data ?? [];
-  const allDoctors: any[] = allDoctorsData?.data ?? [];
-  const filteredDoctors: any[] = filteredData?.data ?? [];
+  const displayedDoctors: any[] = searchData?.data ?? [];
   const upcomingAppointments: any[] = upcomingData?.data ?? [];
   const unreadCount = unreadData?.data?.count ?? 0;
   const nextAppt = upcomingAppointments[0] ?? null;
 
-  const displayedDoctors = useMemo(() => {
-    const base = selectedSpec ? filteredDoctors : allDoctors;
-    if (!search.trim()) return base;
-    const q = search.toLowerCase();
-    return base.filter(
-      (d: any) =>
-        d.name?.toLowerCase().includes(q) ||
-        d.specializationDisplayName?.toLowerCase().includes(q)
-    );
-  }, [selectedSpec, filteredDoctors, allDoctors, search]);
-
-  const isLoadingDoctors = loadingDoctors || loadingFiltered;
-
   const onRefresh = async () => {
     setRefreshing(true);
-    await refetchDoctors();
+    await refetchSearch();
     setRefreshing(false);
   };
+
+  const activeFilterCount = Object.values(filters).filter(v => v !== null && v !== false).length;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
@@ -270,10 +282,11 @@ export default function HomeScreen({ navigation }: any) {
         contentContainerStyle={{ paddingBottom: 100 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
-        {/* Search bar */}
-        <View style={{ paddingHorizontal: 20, paddingVertical: 10 }}>
+        {/* Search bar + Filter Button */}
+        <View style={{ paddingHorizontal: 20, paddingVertical: 10, flexDirection: 'row', gap: 10 }}>
           <View
             style={{
+              flex: 1,
               flexDirection: 'row',
               alignItems: 'center',
               backgroundColor: '#f8fafc',
@@ -286,7 +299,7 @@ export default function HomeScreen({ navigation }: any) {
           >
             <Search size={20} color="#94a3b8" />
             <TextInput
-              placeholder="Search doctor or specialty..."
+              placeholder="Search doctor name..."
               placeholderTextColor="#94a3b8"
               value={search}
               onChangeText={setSearch}
@@ -298,6 +311,32 @@ export default function HomeScreen({ navigation }: any) {
               </TouchableOpacity>
             )}
           </View>
+          
+          <TouchableOpacity
+            onPress={() => setIsFilterOpen(true)}
+            style={{
+              width: 52,
+              height: 52,
+              backgroundColor: activeFilterCount > 0 ? `${colors.primary}15` : '#f8fafc',
+              borderRadius: 16,
+              borderWidth: 1,
+              borderColor: activeFilterCount > 0 ? `${colors.primary}30` : '#e2e8f0',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <SlidersHorizontal size={20} color={activeFilterCount > 0 ? colors.primary : '#64748b'} />
+            {activeFilterCount > 0 && (
+              <View style={{
+                position: 'absolute', top: -4, right: -4,
+                backgroundColor: colors.primary, borderRadius: 10,
+                width: 20, height: 20, alignItems: 'center', justifyContent: 'center',
+                borderWidth: 2, borderColor: '#fff'
+              }}>
+                <Text style={{ color: '#fff', fontSize: 10, fontWeight: '800' }}>{activeFilterCount}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
         </View>
 
         {/* Upcoming appointment banner */}
@@ -345,10 +384,8 @@ export default function HomeScreen({ navigation }: any) {
         <View style={{ paddingTop: 20 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginBottom: 12 }}>
             <Text style={{ fontSize: 17, fontWeight: '800', color: '#0f172a' }}>Categories</Text>
-            <TouchableOpacity onPress={() => setSelectedSpec(null)}>
-              <Text style={{ color: colors.primary, fontWeight: '700', fontSize: 13 }}>
-                {selectedSpec ? 'See All' : ''}
-              </Text>
+            <TouchableOpacity onPress={() => setIsFilterOpen(true)}>
+              <Text style={{ color: colors.primary, fontWeight: '700', fontSize: 13 }}>See All</Text>
             </TouchableOpacity>
           </View>
 
@@ -360,30 +397,29 @@ export default function HomeScreen({ navigation }: any) {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={{ paddingHorizontal: 20, gap: 10 }}
             >
-              {/* "All" chip */}
               <TouchableOpacity
-                onPress={() => setSelectedSpec(null)}
+                onPress={() => setFilters({ ...filters, specialization: null })}
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',
                   paddingHorizontal: 16,
                   paddingVertical: 10,
                   borderRadius: 999,
-                  backgroundColor: !selectedSpec ? colors.primary : '#f1f5f9',
+                  backgroundColor: !filters.specialization ? colors.primary : '#f1f5f9',
                   gap: 6,
                 }}
               >
-                <Stethoscope size={16} color={!selectedSpec ? '#fff' : '#64748b'} />
-                <Text style={{ color: !selectedSpec ? '#fff' : '#64748b', fontWeight: '700', fontSize: 13 }}>All</Text>
+                <Stethoscope size={16} color={!filters.specialization ? '#fff' : '#64748b'} />
+                <Text style={{ color: !filters.specialization ? '#fff' : '#64748b', fontWeight: '700', fontSize: 13 }}>All</Text>
               </TouchableOpacity>
 
               {specializations.slice(0, 10).map((spec: any) => {
-                const isActive = selectedSpec === spec.code;
+                const isActive = filters.specialization === spec.code;
                 const icon = SPEC_ICONS[spec.code] ?? DEFAULT_ICON;
                 return (
                   <TouchableOpacity
                     key={spec.code}
-                    onPress={() => setSelectedSpec(isActive ? null : spec.code)}
+                    onPress={() => setFilters({ ...filters, specialization: isActive ? null : spec.code })}
                     style={{
                       flexDirection: 'row',
                       alignItems: 'center',
@@ -412,23 +448,36 @@ export default function HomeScreen({ navigation }: any) {
         <View style={{ paddingHorizontal: 20, paddingTop: 24 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
             <Text style={{ fontSize: 17, fontWeight: '800', color: '#0f172a' }}>
-              {selectedSpec
-                ? specializations.find((s) => s.code === selectedSpec)?.displayName ?? 'Doctors'
+              {filters.specialization
+                ? specializations.find((s) => s.code === filters.specialization)?.displayName ?? 'Doctors'
                 : 'All Doctors'}
             </Text>
-            <Text style={{ color: '#94a3b8', fontSize: 13, fontWeight: '600' }}>
-              {displayedDoctors.length} found
-            </Text>
+            {(isFetching || loadingSearch) ? (
+              <ActivityIndicator size="small" color={colors.primary} />
+            ) : (
+              <Text style={{ color: '#94a3b8', fontSize: 13, fontWeight: '600' }}>
+                {displayedDoctors.length} found
+              </Text>
+            )}
           </View>
 
-          {isLoadingDoctors ? (
+          {(loadingSearch && !isFetching) ? (
             <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
           ) : displayedDoctors.length === 0 ? (
             <View style={{ alignItems: 'center', marginTop: 40 }}>
               <Stethoscope size={44} color="#cbd5e1" />
-              <Text style={{ color: '#94a3b8', fontWeight: '600', fontSize: 15, marginTop: 12, textAlign: 'center' }}>
+              <Text style={{ color: '#64748b', fontWeight: '700', fontSize: 15, marginTop: 16 }}>
                 No doctors found
               </Text>
+              <Text style={{ color: '#94a3b8', fontSize: 13, marginTop: 4 }}>
+                Try adjusting your filters
+              </Text>
+              <TouchableOpacity
+                onPress={() => setFilters({ specialization: null, minFee: null, maxFee: null, minExperience: null, availableOnly: false })}
+                style={{ marginTop: 16, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#f1f5f9', borderRadius: 8 }}
+              >
+                <Text style={{ color: colors.primary, fontWeight: '600', fontSize: 14 }}>Clear All Filters</Text>
+              </TouchableOpacity>
             </View>
           ) : (
             displayedDoctors.map((doctor: any) => (
@@ -446,6 +495,13 @@ export default function HomeScreen({ navigation }: any) {
           )}
         </View>
       </ScrollView>
+      <FilterBottomSheet
+        visible={isFilterOpen}
+        onClose={() => setIsFilterOpen(false)}
+        currentFilters={filters}
+        onApply={setFilters}
+        specializations={specializations}
+      />
     </SafeAreaView>
   );
 }

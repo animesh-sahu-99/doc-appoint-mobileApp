@@ -81,6 +81,14 @@ export const api = createApi({
       query: (specialization) => `doctors/available/specialization/${specialization}`,
       providesTags: ['Doctor'],
     }),
+    /** Unified search with optional filters */
+    searchDoctors: builder.query<any, Record<string, any>>({
+        query: (filters) => ({
+            url: 'doctors/search',
+            params: filters,
+        }),
+        providesTags: ['Doctor'],
+    }),
     getDoctorById: builder.query({
       query: (id) => `doctors/${id}`,
       providesTags: (result, error, id) => [{ type: 'Doctor', id }],
@@ -320,6 +328,7 @@ export const {
   useGetDoctorsBySpecializationQuery,
   useGetAvailableDoctorsBySpecializationQuery,
   useGetDoctorByIdQuery,
+  useSearchDoctorsQuery,
   // Doctor profile
   useGetDoctorProfileQuery,
   useUpdateDoctorMutation,
