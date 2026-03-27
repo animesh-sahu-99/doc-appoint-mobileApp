@@ -6,6 +6,7 @@ import {
     TouchableOpacity,
     ActivityIndicator,
     Alert,
+    TextInput
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -30,6 +31,7 @@ import {
     useNoShowAppointmentMutation,
     useConfirmAppointmentMutation,
     useGetAppointmentByIdQuery,
+    useUpdateAppointmentNotesMutation,
 } from '../../services/api';
 import { colors } from '../../theme/colors';
 import { STATUS_CONFIG } from '../../utils/appointmentStatus';
@@ -82,9 +84,13 @@ export default function DoctorAppointmentDetailsScreen({ route, navigation }: an
     const [completeAppt, { isLoading: isCompleting }] = useCompleteAppointmentMutation();
     const [cancelAppt, { isLoading: isCancelling }] = useCancelAppointmentMutation();
     const [noShowAppt, { isLoading: isNoShowing }] = useNoShowAppointmentMutation();
+    const [updateNotes, { isLoading: isUpdatingNotes }] = useUpdateAppointmentNotesMutation();
 
     const [showAllHistory, setShowAllHistory] = useState(false);
-    const isMutating = isConfirming || isCompleting || isCancelling || isNoShowing;
+    const [isEditingNotes, setIsEditingNotes] = useState(false);
+    const [notesText, setNotesText] = useState('');
+
+    const isMutating = isConfirming || isCompleting || isCancelling || isNoShowing || isUpdatingNotes;
 
     const handleMutation = (
         action: 'confirm' | 'complete' | 'cancel' | 'no-show',
@@ -118,6 +124,16 @@ export default function DoctorAppointmentDetailsScreen({ route, navigation }: an
                 }
             ]
         );
+    };
+
+    const handleSaveNotes = async () => {
+        try {
+            await updateNotes({ appointmentId, notes: notesText.trim() }).unwrap();
+            setIsEditingNotes(false);
+            Alert.alert('Success', 'Notes updated successfully.');
+        } catch (e: any) {
+            Alert.alert('Error', e?.data?.message || 'Failed to update notes.');
+        }
     };
 
     const StatusIcon = STATUS_CONFIG[originalStatus]?.icon ?? AlertCircle;
@@ -169,21 +185,66 @@ export default function DoctorAppointmentDetailsScreen({ route, navigation }: an
                                 </View>
                             </View>
                         )}
-                        {appointment.notes && (
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                                <FileText size={18} color="#94a3b8" />
-                                <View style={{ flex: 1, backgroundColor: '#fffbeb', padding: 10, borderRadius: 8, borderWidth: 1, borderColor: '#fef3c7' }}>
-                                    <Text style={{ color: '#b45309', fontSize: 13 }}>
-                                        Patient Notes: {appointment.notes}
-                                    </Text>
-                                </View>
-                            </View>
-                        )}
-                        <Text style={{ color: '#94a3b8', fontSize: 11, fontWeight: '600', marginTop: 8 }}>
-                            Appointment ID: {appointment.appointmentNumber}
-                        </Text>
                     </View>
                 </View>
+
+                {/* 1.5. Clinical Notes Card */}
+                {(originalStatus === 'COMPLETED' || originalStatus === 'CONFIRMED' || originalStatus === 'PENDING') && (
+                    <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#f1f5f9', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 8, elevation: 2 }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                            <Text style={{ color: '#0f172a', fontSize: 18, fontWeight: '800' }}>Clinical Notes</Text>
+                            {(!isEditingNotes) && (
+                                <TouchableOpacity onPress={() => {
+                                    setNotesText(appointment.notes || '');
+                                    setIsEditingNotes(true);
+                                }}>
+                                    <Text style={{ color: colors.primary, fontSize: 13, fontWeight: '700' }}>
+                                        {appointment.notes ? 'Edit Notes' : '+ Add Notes'}
+                                    </Text>
+                                </TouchableOpacity>
+                            )}
+                        </View>
+
+                        {isEditingNotes ? (
+                            <View>
+                                <TextInput
+                                    value={notesText}
+                                    onChangeText={setNotesText}
+                                    placeholder="Enter diagnosis, prescription, or clinical notes..."
+                                    placeholderTextColor="#94a3b8"
+                                    multiline
+                                    numberOfLines={4}
+                                    style={{
+                                        backgroundColor: '#f8fafc', borderWidth: 1, borderColor: '#e2e8f0',
+                                        borderRadius: 12, padding: 12, minHeight: 100,
+                                        color: '#334155', fontSize: 14, textAlignVertical: 'top'
+                                    }}
+                                />
+                                <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 12, gap: 10 }}>
+                                    <TouchableOpacity 
+                                        onPress={() => setIsEditingNotes(false)}
+                                        style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: '#f1f5f9' }}
+                                    >
+                                        <Text style={{ color: '#475569', fontWeight: '600' }}>Cancel</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity 
+                                        onPress={handleSaveNotes}
+                                        disabled={isUpdatingNotes}
+                                        style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: colors.primary }}
+                                    >
+                                        <Text style={{ color: '#fff', fontWeight: '600' }}>Save</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        ) : (
+                            appointment.notes ? (
+                                <Text style={{ color: '#334155', fontSize: 14, lineHeight: 22 }}>{appointment.notes}</Text>
+                            ) : (
+                                <Text style={{ color: '#94a3b8', fontSize: 13, fontStyle: 'italic' }}>No clinical notes added yet.</Text>
+                            )
+                        )}
+                    </View>
+                )}
 
                 {/* 2. Patient Demographics Card */}
                 <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#f1f5f9', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 8, elevation: 2 }}>

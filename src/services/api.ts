@@ -166,6 +166,18 @@ export const api = createApi({
       }),
       invalidatesTags: ['Slot'],
     }),
+    /** Update clinical notes for an appointment */
+    updateAppointmentNotes: builder.mutation<any, { appointmentId: string; notes: string }>({
+      query: ({ appointmentId, notes }) => ({
+        url: `appointments/${appointmentId}/notes`,
+        method: 'PUT',
+        body: { notes },
+      }),
+      invalidatesTags: (result, error, { appointmentId }) => [
+        { type: 'Appointment', id: appointmentId },
+        { type: 'Appointment', id: 'LIST' },
+      ],
+    }),
 
     // ── Appointment Management (Doctor side) ───────────────────────────────
     /** GET all appointments for a doctor */
@@ -349,6 +361,7 @@ export const {
   useCancelAppointmentMutation,
   useCompleteAppointmentMutation,
   useNoShowAppointmentMutation,
+  useUpdateAppointmentNotesMutation,
   // Patient
   useGetAppointmentsQuery,
   useGetPatientAppointmentsQuery,

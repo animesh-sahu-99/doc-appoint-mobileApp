@@ -183,19 +183,7 @@ export default function PatientAppointmentDetailsScreen({ route, navigation }: a
                             value={appointment.reasonForVisit}
                         />
                     ) : null}
-                    {appointment.notes ? (
-                        <View style={{ marginTop: 4 }}>
-                            <View style={{ height: 1, backgroundColor: '#f1f5f9', marginBottom: 10 }} />
-                            <View style={{ backgroundColor: '#fffbeb', borderRadius: 10, padding: 12, borderWidth: 1, borderColor: '#fef3c7' }}>
-                                <Text style={{ fontSize: 11, fontWeight: '700', color: '#d97706', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.4 }}>
-                                    📝 Note
-                                </Text>
-                                <Text style={{ color: '#92400e', fontSize: 13, lineHeight: 20 }}>
-                                    {appointment.notes}
-                                </Text>
-                            </View>
-                        </View>
-                    ) : null}
+
                     {appointment.createdAt ? (
                         <InfoRow
                             icon={<CalendarDays size={16} color={colors.primary} />}
@@ -204,6 +192,20 @@ export default function PatientAppointmentDetailsScreen({ route, navigation }: a
                         />
                     ) : null}
                 </SectionCard>
+
+                {/* ── Clinical Notes ── */}
+                {appointment.notes ? (
+                    <SectionCard title="Clinical Notes & Prescriptions">
+                        <View style={{ backgroundColor: '#f0fdf4', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#bbf7d0' }}>
+                            <Text style={{ color: '#166534', fontSize: 14, lineHeight: 22 }}>
+                                {appointment.notes}
+                            </Text>
+                        </View>
+                        <Text style={{ color: '#94a3b8', fontSize: 11, marginTop: 10, fontStyle: 'italic' }}>
+                            Added by Dr. {appointment.doctorName}
+                        </Text>
+                    </SectionCard>
+                ) : null}
 
                 {/* ── Doctor Info ── */}
                 <SectionCard title="Doctor">
