@@ -15,18 +15,8 @@ import {
 } from '../../services/api';
 import { colors } from '../../theme/colors';
 import { formatTime, formatDateLabel } from '../../utils/formatters';
+import { STATUS_CONFIG } from '../../utils/appointmentStatus';
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-
-
-const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; dot: string }> = {
-    PENDING: { label: 'Pending', bg: '#fffbeb', text: '#d97706', dot: '#f59e0b' },
-    CONFIRMED: { label: 'Confirmed', bg: '#f0fdf4', text: '#16a34a', dot: '#22c55e' },
-    COMPLETED: { label: 'Completed', bg: '#eff6ff', text: '#1d4ed8', dot: '#3b82f6' },
-    CANCELLED: { label: 'Cancelled', bg: '#fff1f2', text: '#e11d48', dot: '#ef4444' },
-    NO_SHOW: { label: 'No Show', bg: '#f8fafc', text: '#64748b', dot: '#9ca3af' },
-};
 
 // ─── Appointment Card ─────────────────────────────────────────────────────────
 

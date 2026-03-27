@@ -32,40 +32,11 @@ import {
     useGetAppointmentByIdQuery,
 } from '../../services/api';
 import { colors } from '../../theme/colors';
+import { STATUS_CONFIG } from '../../utils/appointmentStatus';
+import { formatDateLabel, formatTime, calculateAge } from '../../utils/formatters';
+import { SectionCard } from '../../components/ui/SectionCard';
+import { InfoRow } from '../../components/ui/InfoRow';
 
-// Helpers
-const formatDate = (dateStr: string) => {
-    if (!dateStr) return '';
-    return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', {
-        weekday: 'short',
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric'
-    });
-};
-
-const formatTime = (t: string) => {
-    if (!t) return '';
-    const [h, m] = t.split(':').map(Number);
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    const hour = h % 12 || 12;
-    return `${hour}:${String(m).padStart(2, '0')} ${ampm}`;
-};
-
-const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; dot: string; icon: any }> = {
-    PENDING: { label: 'Pending', bg: '#fef3c7', text: '#d97706', dot: '#f59e0b', icon: AlertCircle },
-    CONFIRMED: { label: 'Confirmed', bg: '#dcfce7', text: '#16a34a', dot: '#22c55e', icon: CheckCircle },
-    COMPLETED: { label: 'Completed', bg: '#dbeafe', text: '#1d4ed8', dot: '#3b82f6', icon: CheckCircle },
-    CANCELLED: { label: 'Cancelled', bg: '#fee2e2', text: '#dc2626', dot: '#ef4444', icon: XCircle },
-    NO_SHOW: { label: 'No Show', bg: '#f3f4f6', text: '#6b7280', dot: '#9ca3af', icon: UserMinus },
-};
-
-function calculateAge(dobStr: string) {
-    if (!dobStr) return null;
-    const dob = new Date(dobStr);
-    const diff = Date.now() - dob.getTime();
-    return Math.abs(new Date(diff).getUTCFullYear() - 1970);
-}
 
 export default function DoctorAppointmentDetailsScreen({ route, navigation }: any) {
     const { appointment: appointmentParam } = route.params;
@@ -179,7 +150,7 @@ export default function DoctorAppointmentDetailsScreen({ route, navigation }: an
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                             <CalendarDays size={18} color="#94a3b8" />
                             <Text style={{ color: '#334155', fontSize: 14, fontWeight: '600' }}>
-                                {formatDate(appointment.appointmentDate)}
+                                {formatDateLabel(appointment.appointmentDate)}
                             </Text>
                         </View>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -278,7 +249,7 @@ export default function DoctorAppointmentDetailsScreen({ route, navigation }: an
                                         <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: hCfg.dot, marginTop: 4 }} />
                                         <View style={{ flex: 1 }}>
                                             <Text style={{ color: '#334155', fontSize: 14, fontWeight: '600' }}>
-                                                {formatDate(appt.appointmentDate)}
+                                                {formatDateLabel(appt.appointmentDate)}
                                             </Text>
                                             {appt.startTime ? (
                                                 <Text style={{ color: '#94a3b8', fontSize: 12, fontWeight: '500', marginTop: 2 }}>

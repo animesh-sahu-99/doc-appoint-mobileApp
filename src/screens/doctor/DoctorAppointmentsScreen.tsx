@@ -22,6 +22,8 @@ import {
     useNoShowAppointmentMutation,
 } from '../../services/api';
 import { colors } from '../../theme/colors';
+import { STATUS_CONFIG } from '../../utils/appointmentStatus';
+import { formatTime, formatDateLabel } from '../../utils/formatters';
 
 type Tab = 'Upcoming' | 'Completed' | 'Cancelled';
 
@@ -33,24 +35,6 @@ const TAB_STATUS_FILTER: Record<Tab, string[]> = {
     Cancelled: ['CANCELLED', 'NO_SHOW'],
 };
 
-const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string }> = {
-    PENDING: { label: 'Pending', bg: '#fef3c7', text: '#d97706' },
-    CONFIRMED: { label: 'Confirmed', bg: '#dcfce7', text: '#16a34a' },
-    COMPLETED: { label: 'Completed', bg: '#dbeafe', text: '#1d4ed8' },
-    CANCELLED: { label: 'Cancelled', bg: '#fee2e2', text: '#dc2626' },
-    NO_SHOW: { label: 'No Show', bg: '#f3f4f6', text: '#6b7280' },
-};
-
-const formatDateTime = (date: string, time: string) => {
-    if (!date) return '';
-    const d = new Date(date);
-    const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    if (!time) return label;
-    const [h, m] = time.split(':').map(Number);
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    const hour = h % 12 || 12;
-    return `${label}, ${hour}:${String(m).padStart(2, '0')} ${ampm}`;
-};
 
 // More-actions bottom sheet
 interface MoreSheetProps {
@@ -266,7 +250,7 @@ export default function DoctorAppointmentsScreen({ navigation }: any) {
                                         <View className="flex-row items-center" style={{ gap: 6 }}>
                                             <Text className="text-slate-500 text-xs">📅</Text>
                                             <Text className="text-slate-600 dark:text-slate-300 text-sm">
-                                                {formatDateTime(appt.appointmentDate, appt.startTime)}
+                                                {formatDateLabel(appt.appointmentDate)}{appt.startTime ? `, ${formatTime(appt.startTime)}` : ''}
                                             </Text>
                                         </View>
                                         {appt.reasonForVisit && (

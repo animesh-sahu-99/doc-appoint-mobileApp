@@ -25,6 +25,7 @@ import {
 } from 'lucide-react-native';
 import { useGetPatientProfileQuery, useUpdatePatientMutation } from '../../services/api';
 import { colors } from '../../theme/colors';
+import { FieldWrapper, StyledInput } from '../../components/ui/FormField';
 
 const editProfileSchema = z.object({
     firstName: z.string().min(2, "First name must be at least 2 characters").max(50),
@@ -108,35 +109,38 @@ export default function EditPatientProfileScreen({ navigation }: any) {
                 <View style={{ gap: 16 }}>
 
                     {/* First Name */}
-                    <View>
-                        <Text style={{ fontSize: 13, fontWeight: '600', color: '#475569', marginBottom: 6, marginLeft: 4 }}>First Name <Text style={{ color: '#ef4444' }}>*</Text></Text>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderWidth: 1, borderColor: errors.firstName ? '#ef4444' : '#e2e8f0', borderRadius: 12, paddingHorizontal: 12, height: 50 }}>
-                            <User size={18} color="#94a3b8" />
-                            <Controller
-                                control={control}
-                                name="firstName"
-                                render={({ field: { onChange, value } }) => (
-                                    <TextInput style={{ flex: 1, marginLeft: 10, fontSize: 15, color: '#0f172a' }} value={value} onChangeText={onChange} placeholder="John" placeholderTextColor="#94a3b8" />
-                                )}
-                            />
-                        </View>
-                        {errors.firstName && <Text style={{ color: '#ef4444', fontSize: 12, marginTop: 4, marginLeft: 4 }}>{errors.firstName.message}</Text>}
-                    </View>
+                    <FieldWrapper label="First Name" required error={errors.firstName?.message}>
+                        <Controller
+                            control={control}
+                            name="firstName"
+                            render={({ field: { onChange, value } }) => (
+                                <StyledInput
+                                    icon={<User size={18} color="#94a3b8" />}
+                                    hasError={!!errors.firstName}
+                                    value={value}
+                                    onChangeText={onChange}
+                                    placeholder="John"
+                                />
+                            )}
+                        />
+                    </FieldWrapper>
 
                     {/* Last Name */}
-                    <View>
-                        <Text style={{ fontSize: 13, fontWeight: '600', color: '#475569', marginBottom: 6, marginLeft: 4 }}>Last Name</Text>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderWidth: 1, borderColor: errors.lastName ? '#ef4444' : '#e2e8f0', borderRadius: 12, paddingHorizontal: 12, height: 50 }}>
-                            <User size={18} color="#94a3b8" />
-                            <Controller
-                                control={control}
-                                name="lastName"
-                                render={({ field: { onChange, value } }) => (
-                                    <TextInput style={{ flex: 1, marginLeft: 10, fontSize: 15, color: '#0f172a' }} value={value} onChangeText={onChange} placeholder="Doe" placeholderTextColor="#94a3b8" />
-                                )}
-                            />
-                        </View>
-                    </View>
+                    <FieldWrapper label="Last Name" error={errors.lastName?.message}>
+                        <Controller
+                            control={control}
+                            name="lastName"
+                            render={({ field: { onChange, value } }) => (
+                                <StyledInput
+                                    icon={<User size={18} color="#94a3b8" />}
+                                    hasError={!!errors.lastName}
+                                    value={value}
+                                    onChangeText={onChange}
+                                    placeholder="Doe"
+                                />
+                            )}
+                        />
+                    </FieldWrapper>
 
                     {/* Gender */}
                     <View>
@@ -172,42 +176,39 @@ export default function EditPatientProfileScreen({ navigation }: any) {
                     </View>
 
                     {/* Date of Birth */}
-                    <View>
-                        <Text style={{ fontSize: 13, fontWeight: '600', color: '#475569', marginBottom: 6, marginLeft: 4 }}>Date of Birth (YYYY-MM-DD)</Text>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderWidth: 1, borderColor: errors.dateOfBirth ? '#ef4444' : '#e2e8f0', borderRadius: 12, paddingHorizontal: 12, height: 50 }}>
-                            <Calendar size={18} color="#94a3b8" />
-                            <Controller
-                                control={control}
-                                name="dateOfBirth"
-                                render={({ field: { onChange, value } }) => (
-                                    <TextInput style={{ flex: 1, marginLeft: 10, fontSize: 15, color: '#0f172a' }} value={value} onChangeText={onChange} placeholder="1990-01-30" placeholderTextColor="#94a3b8" />
-                                )}
-                            />
-                        </View>
-                        {errors.dateOfBirth && <Text style={{ color: '#ef4444', fontSize: 12, marginTop: 4, marginLeft: 4 }}>{errors.dateOfBirth.message}</Text>}
-                    </View>
+                    <FieldWrapper label="Date of Birth (YYYY-MM-DD)" error={errors.dateOfBirth?.message}>
+                        <Controller
+                            control={control}
+                            name="dateOfBirth"
+                            render={({ field: { onChange, value } }) => (
+                                <StyledInput
+                                    icon={<Calendar size={18} color="#94a3b8" />}
+                                    hasError={!!errors.dateOfBirth}
+                                    value={value}
+                                    onChangeText={onChange}
+                                    placeholder="1990-01-30"
+                                />
+                            )}
+                        />
+                    </FieldWrapper>
 
                     {/* Address */}
-                    <View>
-                        <Text style={{ fontSize: 13, fontWeight: '600', color: '#475569', marginBottom: 6, marginLeft: 4 }}>Address</Text>
-                        <View style={{ flexDirection: 'row', backgroundColor: '#fff', borderWidth: 1, borderColor: errors.address ? '#ef4444' : '#e2e8f0', borderRadius: 12, paddingHorizontal: 12, paddingTop: 14, minHeight: 100 }}>
-                            <MapPin size={18} color="#94a3b8" style={{ marginTop: 2 }} />
-                            <Controller
-                                control={control}
-                                name="address"
-                                render={({ field: { onChange, value } }) => (
-                                    <TextInput
-                                        style={{ flex: 1, marginLeft: 10, fontSize: 15, color: '#0f172a', textAlignVertical: 'top' }}
-                                        value={value}
-                                        onChangeText={onChange}
-                                        placeholder="123 Main St, City, Country"
-                                        placeholderTextColor="#94a3b8"
-                                        multiline
-                                    />
-                                )}
-                            />
-                        </View>
-                    </View>
+                    <FieldWrapper label="Address" error={errors.address?.message}>
+                        <Controller
+                            control={control}
+                            name="address"
+                            render={({ field: { onChange, value } }) => (
+                                <StyledInput
+                                    icon={<MapPin size={18} color="#94a3b8" />}
+                                    hasError={!!errors.address}
+                                    value={value}
+                                    onChangeText={onChange}
+                                    placeholder="123 Main St, City, Country"
+                                    multiline
+                                />
+                            )}
+                        />
+                    </FieldWrapper>
 
                 </View>
 

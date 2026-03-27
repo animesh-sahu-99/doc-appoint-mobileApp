@@ -35,3 +35,22 @@ export const formatCreatedAt = (iso: string) => {
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
         ' at ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 };
+
+/**
+ * Returns today's date as 'YYYY-MM-DD' string (local time).
+ */
+export const todayStr = (): string => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+/**
+ * Calculates age in years from a date-of-birth string (YYYY-MM-DD or ISO).
+ */
+export const calculateAge = (dobStr: string): number | null => {
+    if (!dobStr) return null;
+    const dob = new Date(dobStr);
+    const diff = Date.now() - dob.getTime();
+    return Math.abs(new Date(diff).getUTCFullYear() - 1970);
+};
+

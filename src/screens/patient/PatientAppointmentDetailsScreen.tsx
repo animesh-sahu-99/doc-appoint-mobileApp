@@ -17,69 +17,14 @@ import {
     User,
     Phone,
     FileText,
-    CheckCircle,
-    AlertCircle,
-    XCircle,
-    UserMinus,
     Hash,
 } from 'lucide-react-native';
 import { useCancelAppointmentMutation, useGetAppointmentByIdQuery } from '../../services/api';
 import { colors } from '../../theme/colors';
 import { formatDateLabel as formatDate, formatTime, formatCreatedAt } from '../../utils/formatters';
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-
-
-const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; border: string; icon: any }> = {
-    PENDING:   { label: 'Pending',   bg: '#fffbeb', text: '#d97706', border: '#fde68a', icon: AlertCircle },
-    CONFIRMED: { label: 'Confirmed', bg: '#f0fdf4', text: '#16a34a', border: '#bbf7d0', icon: CheckCircle },
-    COMPLETED: { label: 'Completed', bg: '#eff6ff', text: '#1d4ed8', border: '#bfdbfe', icon: CheckCircle },
-    CANCELLED: { label: 'Cancelled', bg: '#fff1f2', text: '#e11d48', border: '#fecdd3', icon: XCircle },
-    NO_SHOW:   { label: 'No Show',   bg: '#f8fafc', text: '#64748b', border: '#e2e8f0', icon: UserMinus },
-};
-
-// ─── Info Row Component ───────────────────────────────────────────────────────
-
-function InfoRow({ icon, label, value, highlight }: {
-    icon: React.ReactNode; label: string; value: string; highlight?: boolean;
-}) {
-    return (
-        <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 10 }}>
-            <View style={{
-                width: 34, height: 34, borderRadius: 10,
-                backgroundColor: `${colors.primary}10`,
-                alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            }}>
-                {icon}
-            </View>
-            <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 11, fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 2 }}>
-                    {label}
-                </Text>
-                <Text style={{ fontSize: 14, fontWeight: highlight ? '700' : '500', color: highlight ? '#0f172a' : '#334155', lineHeight: 20 }}>
-                    {value}
-                </Text>
-            </View>
-        </View>
-    );
-}
-
-function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
-    return (
-        <View style={{
-            backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 14,
-            borderWidth: 1, borderColor: '#f1f5f9',
-            shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 8, elevation: 2,
-        }}>
-            <Text style={{ fontSize: 13, fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 4 }}>
-                {title}
-            </Text>
-            <View style={{ height: 1, backgroundColor: '#f1f5f9', marginBottom: 4 }} />
-            {children}
-        </View>
-    );
-}
+import { STATUS_CONFIG } from '../../utils/appointmentStatus';
+import { SectionCard } from '../../components/ui/SectionCard';
+import { InfoRow } from '../../components/ui/InfoRow';
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 

@@ -22,17 +22,8 @@ import {
     useGetUnreadNotificationCountQuery,
 } from '../../services/api';
 import { colors } from '../../theme/colors';
-
-const STATUS_CONFIG: Record<
-    string,
-    { label: string; bg: string; text: string }
-> = {
-    PENDING: { label: 'Pending', bg: '#fef3c7', text: '#d97706' },
-    CONFIRMED: { label: 'Confirmed', bg: '#dcfce7', text: '#16a34a' },
-    COMPLETED: { label: 'Completed', bg: '#dbeafe', text: '#1d4ed8' },
-    CANCELLED: { label: 'Cancelled', bg: '#fee2e2', text: '#dc2626' },
-    NO_SHOW: { label: 'No Show', bg: '#f3f4f6', text: '#6b7280' },
-};
+import { STATUS_CONFIG } from '../../utils/appointmentStatus';
+import { todayStr } from '../../utils/formatters';
 
 const getGreeting = () => {
     const hour = new Date().getHours();
@@ -41,12 +32,6 @@ const getGreeting = () => {
     return 'Good Evening';
 };
 
-const todayStr = () => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
-        d.getDate()
-    ).padStart(2, '0')}`;
-};
 
 const formatTime = (t: string) => {
     if (!t) return '';
