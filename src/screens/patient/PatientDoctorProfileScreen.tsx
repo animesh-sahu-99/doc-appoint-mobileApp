@@ -6,7 +6,9 @@ import {
     TouchableOpacity,
     ActivityIndicator,
     Platform,
+    StyleSheet,
 } from 'react-native';
+import { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import {
@@ -25,10 +27,15 @@ import {
     Bone,
     Baby,
     Smile,
+    MessageSquare,
+    CheckCircle,
+    ChevronDown,
 } from 'lucide-react-native';
-import { useGetDoctorByIdQuery } from '../../services/api';
+import { useGetDoctorByIdQuery, useGetDoctorReviewsQuery } from '../../services/api';
 import { colors } from '../../theme/colors';
 import { RootStackParamList } from '../../navigation/types';
+import { StarRating } from '../../components/ui/StarRating';
+import { formatCreatedAt } from '../../utils/formatters';
 
 type DoctorProfileRouteProp = RouteProp<RootStackParamList, 'DoctorProfile'>;
 
@@ -48,8 +55,16 @@ export default function PatientDoctorProfileScreen() {
     const navigation = useNavigation<any>();
     const { doctorId } = route.params;
 
+    const [sortType, setSortType] = useState('recent');
+
     const { data, isLoading } = useGetDoctorByIdQuery(doctorId);
+    const { data: reviewsData, isLoading: isLoadingReviews } = useGetDoctorReviewsQuery({ 
+        doctorId, 
+        sort: sortType 
+    });
+    
     const doctor = data?.data;
+    const reviews = reviewsData?.data?.content ?? [];
 
     if (isLoading) {
         return (
@@ -145,12 +160,14 @@ export default function PatientDoctorProfileScreen() {
                             </Text>
 
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fef9c3', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, gap: 4 }}>
-                                    <Star size={12} color="#eab308" fill="#eab308" />
-                                    <Text style={{ fontSize: 11, fontWeight: '700', color: '#854d0e' }}>4.8</Text>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#fef9c3', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
+                                    <Star size={14} color="#854d0e" fill="#854d0e" />
+                                    <Text style={{ fontSize: 13, fontWeight: '800', color: '#854d0e' }}>
+                                        {doctor.averageRating?.toFixed(1) ?? '0.0'}
+                                    </Text>
                                 </View>
-                                <Text style={{ fontSize: 12, color: '#94a3b8', fontWeight: '500' }}>
-                                    (120+ reviews)
+                                <Text style={{ fontSize: 12, color: '#94a3b8', fontWeight: '600' }}>
+                                    ({doctor.totalReviews ?? 0} reviews)
                                 </Text>
                             </View>
                         </View>
@@ -207,6 +224,79 @@ export default function PatientDoctorProfileScreen() {
                                 <Text style={{ fontSize: 14, fontWeight: '700', color: colors.primary }}>₹ {doctor.consultationFee ?? '--'}</Text>
                             </View>
                         </View>
+                    </View>
+
+                    {/* Reviews Section */}
+                    <View style={{ marginBottom: 100 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                            <View>
+                                <Text style={{ fontSize: 18, fontWeight: '800', color: '#0f172a' }}>Patient Reviews</Text>
+                                <Text style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>Real feedback from visits</Text>
+                            </View>
+                            
+                            {/* Sort Dropdown (Simple version) */}
+                            <View style={{ flexDirection: 'row', gap: 8 }}>
+                                {['recent', 'high', 'low'].map((type) => (
+                                    <TouchableOpacity 
+                                        key={type}
+                                        onPress={() => setSortType(type)}
+                                        style={{
+                                            paddingHorizontal: 10,
+                                            paddingVertical: 6,
+                                            borderRadius: 8,
+                                            backgroundColor: sortType === type ? colors.primary : '#f1f5f9',
+                                        }}
+                                    >
+                                        <Text style={{ 
+                                            fontSize: 10, 
+                                            fontWeight: '700', 
+                                            color: sortType === type ? '#fff' : '#64748b',
+                                            textTransform: 'capitalize'
+                                        }}>
+                                            {type}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        </View>
+
+                        {isLoadingReviews ? (
+                            <ActivityIndicator color={colors.primary} />
+                        ) : reviews.length > 0 ? (
+                            <View style={{ gap: 16 }}>
+                                {reviews.map((item: any) => (
+                                    <View key={item.reviewId} style={{ backgroundColor: '#fff', borderRadius: 20, padding: 16, borderLeftWidth: 4, borderLeftColor: item.rating >= 4 ? '#22c55e' : item.rating <= 2 ? '#ef4444' : '#eab308' }}>
+                                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+                                            <View>
+                                                <Text style={{ fontSize: 15, fontWeight: '700', color: '#1e293b' }}>{item.patientName}</Text>
+                                                <Text style={{ fontSize: 11, color: '#94a3b8', marginTop: 1 }}>{formatCreatedAt(item.createdAt)}</Text>
+                                            </View>
+                                            <View style={{ alignItems: 'flex-end' }}>
+                                                <StarRating rating={item.rating} size={14} />
+                                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
+                                                    <CheckCircle size={10} color="#16a34a" />
+                                                    <Text style={{ fontSize: 9, fontWeight: '800', color: '#16a34a', textTransform: 'uppercase' }}>Verified Visit</Text>
+                                                </View>
+                                            </View>
+                                        </View>
+                                        
+                                        <Text style={{ fontSize: 14, color: '#475569', lineHeight: 20 }}>"{item.comment}"</Text>
+
+                                        {item.doctorReply && (
+                                            <View style={{ marginTop: 12, padding: 12, backgroundColor: '#f8fafc', borderRadius: 12, borderLeftWidth: 2, borderLeftColor: colors.primary }}>
+                                                <Text style={{ fontSize: 11, fontWeight: '800', color: colors.primary, marginBottom: 4 }}>DOCTOR RESPONSE</Text>
+                                                <Text style={{ fontSize: 13, color: '#334155', lineHeight: 18 }}>{item.doctorReply}</Text>
+                                            </View>
+                                        )}
+                                    </View>
+                                ))}
+                            </View>
+                        ) : (
+                            <View style={{ alignItems: 'center', paddingVertical: 40, backgroundColor: '#fff', borderRadius: 20 }}>
+                                <MessageSquare size={32} color="#cbd5e1" />
+                                <Text style={{ color: '#94a3b8', marginTop: 12 }}>No reviews yet for this doctor.</Text>
+                            </View>
+                        )}
                     </View>
                 </View>
             </ScrollView>

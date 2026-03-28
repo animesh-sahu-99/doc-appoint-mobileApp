@@ -22,6 +22,7 @@ import {
     XCircle,
     UserMinus,
     FileText,
+    MessageSquare,
 } from 'lucide-react-native';
 import {
     useGetPatientProfileQuery,
@@ -32,12 +33,14 @@ import {
     useConfirmAppointmentMutation,
     useGetAppointmentByIdQuery,
     useUpdateAppointmentNotesMutation,
+    useReplyToReviewMutation,
 } from '../../services/api';
 import { colors } from '../../theme/colors';
 import { STATUS_CONFIG } from '../../utils/appointmentStatus';
-import { formatDateLabel, formatTime, calculateAge } from '../../utils/formatters';
+import { formatDateLabel, formatTime, calculateAge, formatCreatedAt } from '../../utils/formatters';
 import { SectionCard } from '../../components/ui/SectionCard';
 import { InfoRow } from '../../components/ui/InfoRow';
+import { StarRating } from '../../components/ui/StarRating';
 
 
 export default function DoctorAppointmentDetailsScreen({ route, navigation }: any) {
@@ -85,12 +88,16 @@ export default function DoctorAppointmentDetailsScreen({ route, navigation }: an
     const [cancelAppt, { isLoading: isCancelling }] = useCancelAppointmentMutation();
     const [noShowAppt, { isLoading: isNoShowing }] = useNoShowAppointmentMutation();
     const [updateNotes, { isLoading: isUpdatingNotes }] = useUpdateAppointmentNotesMutation();
+    const [replyToReview, { isLoading: isReplying }] = useReplyToReviewMutation();
 
     const [showAllHistory, setShowAllHistory] = useState(false);
     const [isEditingNotes, setIsEditingNotes] = useState(false);
     const [notesText, setNotesText] = useState('');
+    
+    const [isReplyingToReview, setIsReplyingToReview] = useState(false);
+    const [replyText, setReplyText] = useState('');
 
-    const isMutating = isConfirming || isCompleting || isCancelling || isNoShowing || isUpdatingNotes;
+    const isMutating = isConfirming || isCompleting || isCancelling || isNoShowing || isUpdatingNotes || isReplying;
 
     const handleMutation = (
         action: 'confirm' | 'complete' | 'cancel' | 'no-show',
@@ -133,6 +140,20 @@ export default function DoctorAppointmentDetailsScreen({ route, navigation }: an
             Alert.alert('Success', 'Notes updated successfully.');
         } catch (e: any) {
             Alert.alert('Error', e?.data?.message || 'Failed to update notes.');
+        }
+    };
+
+    const handleSaveReply = async () => {
+        if (!replyText.trim()) return;
+        try {
+            await replyToReview({
+                reviewId: appointment.reviewId,
+                reply: replyText.trim(),
+            }).unwrap();
+            setIsReplyingToReview(false);
+            Alert.alert('Success', 'Reply submitted successfully.');
+        } catch (e: any) {
+            Alert.alert('Error', e?.data?.message || 'Failed to submit reply.');
         }
     };
 
@@ -241,6 +262,74 @@ export default function DoctorAppointmentDetailsScreen({ route, navigation }: an
                                 <Text style={{ color: '#334155', fontSize: 14, lineHeight: 22 }}>{appointment.notes}</Text>
                             ) : (
                                 <Text style={{ color: '#94a3b8', fontSize: 13, fontStyle: 'italic' }}>No clinical notes added yet.</Text>
+                            )
+                        )}
+                    </View>
+                )}
+
+                {/* 1.5. Patient Feedback Card (Shown if appointment is COMPLETED and has feedback) */}
+                {originalStatus === 'COMPLETED' && appointment.reviewId && (
+                    <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 16, borderLeftWidth: 4, borderLeftColor: colors.accent, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 8, elevation: 2 }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                            <Text style={{ color: '#0f172a', fontSize: 18, fontWeight: '800' }}>Patient Feedback</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#f0fdf4', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
+                                <CheckCircle size={12} color="#16a34a" />
+                                <Text style={{ fontSize: 10, fontWeight: '700', color: '#16a34a' }}>VERIFIED VISIT</Text>
+                            </View>
+                        </View>
+
+                        <View style={{ marginBottom: 12 }}>
+                            <StarRating rating={appointment.rating} size={18} />
+                            <Text style={{ color: '#94a3b8', fontSize: 11, marginTop: 4 }}>{formatCreatedAt(appointment.reviewCreatedAt)}</Text>
+                        </View>
+                        
+                        <Text style={{ color: '#334155', fontSize: 14, lineHeight: 22, fontStyle: 'italic', marginBottom: 16 }}>
+                            "{appointment.comment}"
+                        </Text>
+
+                        {appointment.doctorReply ? (
+                            <View style={{ padding: 12, backgroundColor: '#f8fafc', borderRadius: 12, borderLeftWidth: 2, borderLeftColor: colors.primary }}>
+                                <Text style={{ fontSize: 11, fontWeight: '800', color: colors.primary, marginBottom: 4 }}>YOUR RESPONSE</Text>
+                                <Text style={{ fontSize: 14, color: '#334155', lineHeight: 20 }}>{appointment.doctorReply}</Text>
+                            </View>
+                        ) : (
+                            !isReplyingToReview ? (
+                                <TouchableOpacity 
+                                    onPress={() => {
+                                        setReplyText('');
+                                        setIsReplyingToReview(true);
+                                    }}
+                                    style={{ alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: `${colors.primary}10`, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10 }}
+                                >
+                                    <MessageSquare size={16} color={colors.primary} />
+                                    <Text style={{ color: colors.primary, fontWeight: '700', fontSize: 14 }}>Reply to Patient</Text>
+                                </TouchableOpacity>
+                            ) : (
+                                <View>
+                                    <TextInput
+                                        value={replyText}
+                                        onChangeText={setReplyText}
+                                        placeholder="Write a professional response..."
+                                        placeholderTextColor="#94a3b8"
+                                        multiline
+                                        style={{ backgroundColor: '#f8fafc', borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 12, padding: 12, minHeight: 80, color: '#334155', fontSize: 14, textAlignVertical: 'top' }}
+                                    />
+                                    <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 12, gap: 10 }}>
+                                        <TouchableOpacity 
+                                            onPress={() => setIsReplyingToReview(false)}
+                                            style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 }}
+                                        >
+                                            <Text style={{ color: '#64748b', fontWeight: '600' }}>Cancel</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity 
+                                            onPress={handleSaveReply}
+                                            disabled={isReplying || !replyText.trim()}
+                                            style={{ paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10, backgroundColor: colors.primary }}
+                                        >
+                                            <Text style={{ color: '#fff', fontWeight: '700' }}>Send Reply</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
                             )
                         )}
                     </View>

@@ -51,7 +51,7 @@ const baseQueryWithLogging: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQu
 export const api = createApi({
   reducerPath: 'api',
   baseQuery: baseQueryWithLogging,
-  tagTypes: ['User', 'Doctor', 'Appointment', 'Slot', 'Notification'],
+  tagTypes: ['User', 'Doctor', 'Appointment', 'Slot', 'Notification', 'Review'],
   endpoints: (builder) => ({
     // ── Patient / Doctor Discovery ─────────────────────────────────────────
     getDoctors: builder.query({
@@ -329,6 +329,43 @@ export const api = createApi({
         body: data,
       }),
     }),
+
+    // ── Reviews ─────────────────────────────────────────────────────────────
+    /** GET reviews for a doctor */
+    getDoctorReviews: builder.query<any, { doctorId: string; sort?: string; page?: number; size?: number }>({
+      query: ({ doctorId, sort = 'recent', page = 0, size = 10 }) => 
+        `reviews/doctor/${doctorId}?sort=${sort}&page=${page}&size=${size}`,
+      providesTags: (result, error, { doctorId }) => [
+        { type: 'Review', id: `DOCTOR-${doctorId}` },
+        { type: 'Review', id: 'LIST' }
+      ],
+    }),
+
+    /** POST submit a review for an appointment */
+    submitReview: builder.mutation<any, { appointmentId: string; rating: number; comment: string }>({
+      query: (body) => ({
+        url: 'reviews',
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: (result, error, { appointmentId }) => [
+        { type: 'Review', id: 'LIST' },
+        { type: 'Appointment', id: appointmentId },
+        { type: 'Doctor', id: 'LIST' }, // To update average ratings in search
+      ],
+    }),
+
+    /** POST reply to a review */
+    replyToReview: builder.mutation<any, { reviewId: string; reply: string }>({
+      query: ({ reviewId, reply }) => ({
+        url: `reviews/${reviewId}/reply`,
+        method: 'POST',
+        body: { reply },
+      }),
+      invalidatesTags: (result, error, { reviewId }) => [
+        { type: 'Review', id: 'LIST' }
+      ],
+    }),
   }),
 });
 
@@ -380,4 +417,8 @@ export const {
   useMarkNotificationAsReadMutation,
   useMarkAllNotificationsAsReadMutation,
   useRegisterDeviceTokenMutation,
+  // Reviews
+  useGetDoctorReviewsQuery,
+  useSubmitReviewMutation,
+  useReplyToReviewMutation,
 } = api;

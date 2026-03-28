@@ -8,6 +8,7 @@ export interface FilterState {
     minFee: number | null;
     maxFee: number | null;
     minExperience: number | null;
+    minRating: number | null;
     availableOnly: boolean;
 }
 
@@ -34,6 +35,13 @@ const FEE_RANGES = [
     { label: '₹1000+', min: 1000, max: null },
 ];
 
+const RATING_OPTIONS = [
+    { label: 'Any', value: null },
+    { label: '3.0+', value: 3 },
+    { label: '4.0+', value: 4 },
+    { label: '4.5+', value: 4.5 },
+];
+
 export function FilterBottomSheet({ visible, onClose, currentFilters, onApply, specializations }: FilterBottomSheetProps) {
     const [localFilters, setLocalFilters] = useState<FilterState>(currentFilters);
 
@@ -48,7 +56,14 @@ export function FilterBottomSheet({ visible, onClose, currentFilters, onApply, s
     };
 
     const handleClear = () => {
-        const reset: FilterState = { specialization: null, minFee: null, maxFee: null, minExperience: null, availableOnly: false };
+        const reset: FilterState = { 
+            specialization: null, 
+            minFee: null, 
+            maxFee: null, 
+            minExperience: null, 
+            minRating: null,
+            availableOnly: false 
+        };
         setLocalFilters(reset);
         onApply(reset);
         onClose();
@@ -129,6 +144,24 @@ export function FilterBottomSheet({ visible, onClose, currentFilters, onApply, s
                                     }}
                                 >
                                     <Text style={{ color: localFilters.minExperience === exp.value ? '#fff' : '#64748b', fontWeight: '600' }}>{exp.label}</Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+
+                        {/* Minimum Rating */}
+                        <Text style={{ fontSize: 15, fontWeight: '700', color: '#0f172a', marginBottom: 12 }}>Review Rating</Text>
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 }}>
+                            {RATING_OPTIONS.map((opt, i) => (
+                                <TouchableOpacity
+                                    key={i}
+                                    onPress={() => setLocalFilters({ ...localFilters, minRating: opt.value })}
+                                    style={{
+                                        paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20,
+                                        backgroundColor: localFilters.minRating === opt.value ? colors.primary : '#f8fafc',
+                                        borderWidth: 1, borderColor: localFilters.minRating === opt.value ? colors.primary : '#e2e8f0',
+                                    }}
+                                >
+                                    <Text style={{ color: localFilters.minRating === opt.value ? '#fff' : '#64748b', fontWeight: '600' }}>{opt.label}</Text>
                                 </TouchableOpacity>
                             ))}
                         </View>

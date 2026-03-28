@@ -8,4 +8,5 @@ export const colors = {
   textPrimaryDark: "#f0f2f4",
   textSecondaryLight: "#637288",
   textSecondaryDark: "#94a3b8",
+  accent: "#eab308",
 };

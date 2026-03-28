@@ -18,13 +18,22 @@ import {
     Phone,
     FileText,
     Hash,
+    CheckCircle,
+    MessageSquare,
 } from 'lucide-react-native';
-import { useCancelAppointmentMutation, useGetAppointmentByIdQuery } from '../../services/api';
+import {
+    useCancelAppointmentMutation,
+    useGetAppointmentByIdQuery,
+    useSubmitReviewMutation,
+} from '../../services/api';
 import { colors } from '../../theme/colors';
 import { formatDateLabel as formatDate, formatTime, formatCreatedAt } from '../../utils/formatters';
 import { STATUS_CONFIG } from '../../utils/appointmentStatus';
 import { SectionCard } from '../../components/ui/SectionCard';
 import { InfoRow } from '../../components/ui/InfoRow';
+import { StarRating } from '../../components/ui/StarRating';
+import PrimaryButton from '../../components/ui/PrimaryButton';
+import { FieldWrapper, StyledInput } from '../../components/ui/FormField';
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
@@ -41,6 +50,13 @@ export default function PatientAppointmentDetailsScreen({ route, navigation }: a
     // Use the fetched data when navigated from a notification, otherwise use the passed full object
     const appointment = isIdOnly ? (fetchedApptRes?.data ?? null) : appointmentParam;
 
+    const [rating, setRating] = useState(0);
+    const [comment, setComment] = useState('');
+    const [showReviewForm, setShowReviewForm] = useState(false);
+
+    const [cancelAppointment, { isLoading: isCancelling }] = useCancelAppointmentMutation();
+    const [submitReview, { isLoading: isSubmittingReview }] = useSubmitReviewMutation();
+
     // Show loading spinner while fetching a notification deep-linked appointment
     if (isIdOnly && isLoadingAppt) {
         return (
@@ -53,8 +69,6 @@ export default function PatientAppointmentDetailsScreen({ route, navigation }: a
     const status: string = appointment?.status ?? 'PENDING';
     const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.PENDING;
     const StatusIcon = cfg.icon;
-
-    const [cancelAppointment, { isLoading: isCancelling }] = useCancelAppointmentMutation();
 
     const canCancel = status === 'PENDING' || status === 'CONFIRMED';
 
@@ -84,6 +98,37 @@ export default function PatientAppointmentDetailsScreen({ route, navigation }: a
                 },
             ]
         );
+    };
+
+    const handleSubmitReview = async () => {
+        if (rating === 0) {
+            Alert.alert('Error', 'Please select a star rating.');
+            return;
+        }
+        if (!comment.trim()) {
+            Alert.alert('Error', 'Please write a short comment about your experience.');
+            return;
+        }
+
+        try {
+            await submitReview({
+                appointmentId: appointment.appointmentId,
+                rating,
+                comment: comment.trim(),
+            }).unwrap();
+            Alert.alert('Success', 'Thank you for your feedback!');
+            setRating(0);
+            setComment('');
+            setShowReviewForm(false);
+        } catch (err: any) {
+            Alert.alert('Error', err.data?.message || 'Failed to submit review.');
+        }
+    };
+
+    const handleCancelReview = () => {
+        setRating(0);
+        setComment('');
+        setShowReviewForm(false);
     };
 
     return (
@@ -248,10 +293,92 @@ export default function PatientAppointmentDetailsScreen({ route, navigation }: a
                         borderRadius: 14, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 10,
                     }}>
                         <StatusIcon size={18} color={cfg.text} />
-                        <Text style={{ color: cfg.text, fontWeight: '700', fontSize: 14 }}>
-                            This appointment is {cfg.label.toLowerCase()}.
+                        <Text style={{ color: cfg.text, fontWeight: '700', fontSize: 14, flex: 1 }}>
+                            This appointment was {status.toLowerCase().replace('_', ' ')}.
                         </Text>
                     </View>
+                )}
+
+                {/* ── Patient Review Section ── */}
+                {status === 'COMPLETED' && (
+                    <>
+                        {appointment.reviewId ? (
+                            <SectionCard title="Your Review">
+                                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                                    <StarRating rating={appointment.rating} size={18} />
+                                    <View style={{ backgroundColor: '#f0fdf4', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                        <CheckCircle size={12} color="#16a34a" />
+                                        <Text style={{ fontSize: 10, fontWeight: '700', color: '#16a34a', textTransform: 'uppercase' }}>Verified Visit</Text>
+                                    </View>
+                                </View>
+                                <Text style={{ fontSize: 14, color: '#334155', lineHeight: 20, fontStyle: 'italic' }}>
+                                    "{appointment.comment}"
+                                </Text>
+                                
+                                {appointment.doctorReply && (
+                                    <View style={{ marginTop: 16, padding: 12, backgroundColor: '#f8fafc', borderRadius: 10, borderLeftWidth: 3, borderLeftColor: colors.primary }}>
+                                        <Text style={{ fontSize: 12, fontWeight: '700', color: '#0f172a', marginBottom: 4 }}>
+                                            Dr. {appointment.doctorName}'s Reply:
+                                        </Text>
+                                        <Text style={{ fontSize: 13, color: '#475569', lineHeight: 18 }}>
+                                            {appointment.doctorReply}
+                                        </Text>
+                                    </View>
+                                )}
+                            </SectionCard>
+                        ) : (
+                            <SectionCard title="Rate Your Experience">
+                                {!showReviewForm ? (
+                                    <View style={{ alignItems: 'center', paddingVertical: 10 }}>
+                                        <Text style={{ fontSize: 14, color: '#64748b', marginBottom: 16, textAlign: 'center' }}>
+                                            How was your consultation with Dr. {appointment.doctorName}?
+                                        </Text>
+                                        <TouchableOpacity 
+                                            onPress={() => setShowReviewForm(true)}
+                                            style={{ backgroundColor: colors.primary, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10 }}
+                                        >
+                                            <Text style={{ color: 'white', fontWeight: '700' }}>Write a Review</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                ) : (
+                                    <View>
+                                        <Text style={{ fontSize: 14, fontWeight: '600', color: '#1e293b', marginBottom: 8 }}>Rating</Text>
+                                        <StarRating 
+                                            rating={rating} 
+                                            onRatingChange={setRating} 
+                                            size={28} 
+                                            style={{ marginBottom: 20 }} 
+                                        />
+                                        
+                                        <FieldWrapper label="Your Feedback" required>
+                                            <StyledInput
+                                                icon={<MessageSquare size={18} color="#94a3b8" />}
+                                                placeholder="Tell us what you liked or how the doctor can improve..."
+                                                value={comment}
+                                                onChangeText={setComment}
+                                                multiline
+                                            />
+                                        </FieldWrapper>
+
+                                        <View style={{ flexDirection: 'row', gap: 10, marginTop: 20 }}>
+                                            <TouchableOpacity 
+                                                onPress={handleCancelReview}
+                                                style={{ flex: 1, paddingVertical: 12, alignItems: 'center' }}
+                                            >
+                                                <Text style={{ color: '#64748b', fontWeight: '600' }}>Cancel</Text>
+                                            </TouchableOpacity>
+                                            <PrimaryButton
+                                                title="Submit Review"
+                                                onPress={handleSubmitReview}
+                                                loading={isSubmittingReview}
+                                                className="flex-1"
+                                            />
+                                        </View>
+                                    </View>
+                                )}
+                            </SectionCard>
+                        )}
+                    </>
                 )}
             </ScrollView>
 

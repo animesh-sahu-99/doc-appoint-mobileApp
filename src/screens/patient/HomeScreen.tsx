@@ -120,12 +120,23 @@ function DoctorCard({ doctor, onBookPress, onViewPress }: any) {
                 {doctor.specializationDisplayName ?? doctor.specialization}
               </Text>
             </View>
-            {/* Active badge */}
-            {doctor.isActive && (
-              <View style={{ backgroundColor: '#dcfce7', borderRadius: 999, paddingHorizontal: 7, paddingVertical: 3 }}>
-                <Text style={{ color: '#16a34a', fontSize: 10, fontWeight: '700' }}>Available</Text>
+            {/* Status & Rating */}
+            <View style={{ alignItems: 'flex-end', gap: 6 }}>
+              {doctor.isActive && (
+                <View style={{ backgroundColor: '#dcfce7', borderRadius: 999, paddingHorizontal: 7, paddingVertical: 3 }}>
+                  <Text style={{ color: '#16a34a', fontSize: 10, fontWeight: '700' }}>Available</Text>
+                </View>
+              )}
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#fef9c3', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 }}>
+                <Star size={12} color="#854d0e" fill="#854d0e" />
+                <Text style={{ fontSize: 11, fontWeight: '800', color: '#854d0e' }}>
+                  {doctor.averageRating?.toFixed(1) ?? '0.0'}
+                </Text>
               </View>
-            )}
+              <Text style={{ fontSize: 9, color: '#94a3b8', fontWeight: '600' }}>
+                {doctor.totalReviews ?? 0} reviews
+              </Text>
+            </View>
           </View>
 
           {/* Experience + Fee */}
@@ -194,6 +205,7 @@ export default function HomeScreen({ navigation }: any) {
     minFee: null,
     maxFee: null,
     minExperience: null,
+    minRating: null,
     availableOnly: false,
   });
 
@@ -473,7 +485,7 @@ export default function HomeScreen({ navigation }: any) {
                 Try adjusting your filters
               </Text>
               <TouchableOpacity
-                onPress={() => setFilters({ specialization: null, minFee: null, maxFee: null, minExperience: null, availableOnly: false })}
+                onPress={() => setFilters({ specialization: null, minFee: null, maxFee: null, minExperience: null, minRating: null, availableOnly: false })}
                 style={{ marginTop: 16, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#f1f5f9', borderRadius: 8 }}
               >
                 <Text style={{ color: colors.primary, fontWeight: '600', fontSize: 14 }}>Clear All Filters</Text>
