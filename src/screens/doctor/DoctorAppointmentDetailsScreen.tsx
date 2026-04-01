@@ -23,7 +23,9 @@ import {
     UserMinus,
     FileText,
     MessageSquare,
+    UploadCloud,
 } from 'lucide-react-native';
+import DocumentPicker from 'react-native-document-picker';
 import {
     useGetPatientProfileQuery,
     useGetPatientAppointmentsQuery,
@@ -34,6 +36,7 @@ import {
     useGetAppointmentByIdQuery,
     useUpdateAppointmentNotesMutation,
     useReplyToReviewMutation,
+    useUploadAppointmentDocumentMutation,
 } from '../../services/api';
 import { colors } from '../../theme/colors';
 import { STATUS_CONFIG } from '../../utils/appointmentStatus';
@@ -41,6 +44,9 @@ import { formatDateLabel, formatTime, calculateAge, formatCreatedAt } from '../.
 import { SectionCard } from '../../components/ui/SectionCard';
 import { InfoRow } from '../../components/ui/InfoRow';
 import { StarRating } from '../../components/ui/StarRating';
+import { DocumentList } from '../../components/ui/DocumentList';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../store/store';
 
 
 export default function DoctorAppointmentDetailsScreen({ route, navigation }: any) {
@@ -97,7 +103,10 @@ export default function DoctorAppointmentDetailsScreen({ route, navigation }: an
     const [isReplyingToReview, setIsReplyingToReview] = useState(false);
     const [replyText, setReplyText] = useState('');
 
-    const isMutating = isConfirming || isCompleting || isCancelling || isNoShowing || isUpdatingNotes || isReplying;
+    const [uploadDoc, { isLoading: isUploading }] = useUploadAppointmentDocumentMutation();
+    const currentUserId = useSelector((state: RootState) => state.auth.user?.id || '');
+
+    const isMutating = isConfirming || isCompleting || isCancelling || isNoShowing || isUpdatingNotes || isReplying || isUploading;
 
     const handleMutation = (
         action: 'confirm' | 'complete' | 'cancel' | 'no-show',
@@ -154,6 +163,38 @@ export default function DoctorAppointmentDetailsScreen({ route, navigation }: an
             Alert.alert('Success', 'Reply submitted successfully.');
         } catch (e: any) {
             Alert.alert('Error', e?.data?.message || 'Failed to submit reply.');
+        }
+    };
+
+    const handleUploadPrescription = async () => {
+        try {
+            const result = await DocumentPicker.pickSingle({
+                type: [DocumentPicker.types.pdf, DocumentPicker.types.images],
+            });
+
+            if (result.size && result.size > 10 * 1024 * 1024) {
+                Alert.alert('File too large', 'Please select a file smaller than 10MB.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', {
+                uri: result.uri,
+                type: result.type || 'application/octet-stream',
+                name: result.name || `prescription_${Date.now()}`,
+            } as any);
+            formData.append('documentType', 'PRESCRIPTION');
+
+            await uploadDoc({
+                appointmentId,
+                formData,
+            }).unwrap();
+
+            Alert.alert('Success', 'Prescription securely uploaded and attached.');
+        } catch (err: any) {
+            if (!DocumentPicker.isCancel(err)) {
+                Alert.alert('Upload Failed', err?.data?.message || 'Could not attach the prescription.');
+            }
         }
     };
 
@@ -266,6 +307,31 @@ export default function DoctorAppointmentDetailsScreen({ route, navigation }: an
                         )}
                     </View>
                 )}
+
+                {/* 1.6 Medical Documents Card */}
+                <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#f1f5f9', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 8, elevation: 2 }}>
+                    <Text style={{ color: '#0f172a', fontSize: 18, fontWeight: '800', marginBottom: 6 }}>Medical Documents</Text>
+                    <DocumentList appointmentId={appointmentId} currentUserId={currentUserId} />
+                    
+                    <TouchableOpacity 
+                        onPress={handleUploadPrescription} 
+                        disabled={isUploading}
+                        style={{
+                            marginTop: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+                            paddingVertical: 12, borderRadius: 12, backgroundColor: `${colors.primary}15`,
+                            borderWidth: 1, borderColor: `${colors.primary}30`, borderStyle: 'dashed'
+                        }}
+                    >
+                        {isUploading ? (
+                            <ActivityIndicator size="small" color={colors.primary} />
+                        ) : (
+                            <>
+                                <UploadCloud size={18} color={colors.primary} />
+                                <Text style={{ fontSize: 14, fontWeight: '700', color: colors.primary }}>Upload Prescription / Document</Text>
+                            </>
+                        )}
+                    </TouchableOpacity>
+                </View>
 
                 {/* 1.5. Patient Feedback Card (Shown if appointment is COMPLETED and has feedback) */}
                 {originalStatus === 'COMPLETED' && appointment.reviewId && (

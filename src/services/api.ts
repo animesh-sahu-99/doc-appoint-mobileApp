@@ -51,7 +51,7 @@ const baseQueryWithLogging: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQu
 export const api = createApi({
   reducerPath: 'api',
   baseQuery: baseQueryWithLogging,
-  tagTypes: ['User', 'Doctor', 'Appointment', 'Slot', 'Notification', 'Review'],
+  tagTypes: ['User', 'Doctor', 'Appointment', 'Slot', 'Notification', 'Review', 'Document'],
   endpoints: (builder) => ({
     // ── Patient / Doctor Discovery ─────────────────────────────────────────
     getDoctors: builder.query({
@@ -366,6 +366,34 @@ export const api = createApi({
         { type: 'Review', id: 'LIST' }
       ],
     }),
+    // ── Documents ───────────────────────────────────────────────────────────
+    getAppointmentDocuments: builder.query<any, string>({
+      query: (appointmentId) => `appointments/${appointmentId}/documents`,
+      providesTags: (result, error, appointmentId) => [
+        { type: 'Appointment', id: appointmentId },
+        { type: 'Document', id: 'LIST' },
+      ],
+    }),
+    uploadAppointmentDocument: builder.mutation<any, { appointmentId: string; formData: FormData }>({
+      query: ({ appointmentId, formData }) => ({
+        url: `appointments/${appointmentId}/documents`,
+        method: 'POST',
+        body: formData,
+        // Let React Native Networking handle the Content-Type boundary for FormData
+        headers: { 'Content-Type': 'multipart/form-data' },
+      }),
+      invalidatesTags: (result, error, { appointmentId }) => [
+        { type: 'Document', id: 'LIST' },
+        { type: 'Appointment', id: appointmentId },
+      ],
+    }),
+    deleteAppointmentDocument: builder.mutation<any, { documentId: string }>({
+      query: ({ documentId }) => ({
+        url: `documents/${documentId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Document'],
+    }),
   }),
 });
 
@@ -421,4 +449,8 @@ export const {
   useGetDoctorReviewsQuery,
   useSubmitReviewMutation,
   useReplyToReviewMutation,
+  // Documents
+  useGetAppointmentDocumentsQuery,
+  useUploadAppointmentDocumentMutation,
+  useDeleteAppointmentDocumentMutation,
 } = api;

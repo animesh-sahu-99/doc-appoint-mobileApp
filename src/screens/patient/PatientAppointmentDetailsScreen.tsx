@@ -20,11 +20,14 @@ import {
     Hash,
     CheckCircle,
     MessageSquare,
+    UploadCloud,
 } from 'lucide-react-native';
+import DocumentPicker from 'react-native-document-picker';
 import {
     useCancelAppointmentMutation,
     useGetAppointmentByIdQuery,
     useSubmitReviewMutation,
+    useUploadAppointmentDocumentMutation,
 } from '../../services/api';
 import { colors } from '../../theme/colors';
 import { formatDateLabel as formatDate, formatTime, formatCreatedAt } from '../../utils/formatters';
@@ -34,6 +37,9 @@ import { InfoRow } from '../../components/ui/InfoRow';
 import { StarRating } from '../../components/ui/StarRating';
 import PrimaryButton from '../../components/ui/PrimaryButton';
 import { FieldWrapper, StyledInput } from '../../components/ui/FormField';
+import { DocumentList } from '../../components/ui/DocumentList';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../store/store';
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
@@ -56,6 +62,10 @@ export default function PatientAppointmentDetailsScreen({ route, navigation }: a
 
     const [cancelAppointment, { isLoading: isCancelling }] = useCancelAppointmentMutation();
     const [submitReview, { isLoading: isSubmittingReview }] = useSubmitReviewMutation();
+    const [uploadDoc, { isLoading: isUploading }] = useUploadAppointmentDocumentMutation();
+    
+    // Using simple patient selector to pass down to components
+    const currentUserId = useSelector((state: RootState) => state.auth.user?.id || '');
 
     // Show loading spinner while fetching a notification deep-linked appointment
     if (isIdOnly && isLoadingAppt) {
@@ -129,6 +139,38 @@ export default function PatientAppointmentDetailsScreen({ route, navigation }: a
         setRating(0);
         setComment('');
         setShowReviewForm(false);
+    };
+
+    const handleUploadDocument = async () => {
+        try {
+            const result = await DocumentPicker.pickSingle({
+                type: [DocumentPicker.types.pdf, DocumentPicker.types.images],
+            });
+
+            if (result.size && result.size > 10 * 1024 * 1024) {
+                Alert.alert('File too large', 'Please select a file smaller than 10MB.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', {
+                uri: result.uri,
+                type: result.type || 'application/octet-stream',
+                name: result.name || `document_${Date.now()}`,
+            } as any);
+            formData.append('documentType', 'LAB_REPORT');
+
+            await uploadDoc({
+                appointmentId: appointment.appointmentId,
+                formData,
+            }).unwrap();
+
+            Alert.alert('Success', 'Document uploaded securely.');
+        } catch (err: any) {
+            if (!DocumentPicker.isCancel(err)) {
+                Alert.alert('Upload Failed', err?.data?.message || 'Could not upload the document.');
+            }
+        }
     };
 
     return (
@@ -284,6 +326,30 @@ export default function PatientAppointmentDetailsScreen({ route, navigation }: a
                             value={appointment.patientPhone}
                         />
                     ) : null}
+                </SectionCard>
+
+                {/* ── Medical Documents ── */}
+                <SectionCard title="Medical Documents">
+                    <DocumentList appointmentId={appointment.appointmentId} currentUserId={currentUserId} />
+                    
+                    <TouchableOpacity 
+                        onPress={handleUploadDocument} 
+                        disabled={isUploading}
+                        style={{
+                            marginTop: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+                            paddingVertical: 12, borderRadius: 12, backgroundColor: `${colors.primary}15`,
+                            borderWidth: 1, borderColor: `${colors.primary}30`, borderStyle: 'dashed'
+                        }}
+                    >
+                        {isUploading ? (
+                            <ActivityIndicator size="small" color={colors.primary} />
+                        ) : (
+                            <>
+                                <UploadCloud size={18} color={colors.primary} />
+                                <Text style={{ fontSize: 14, fontWeight: '700', color: colors.primary }}>Upload Lab Report</Text>
+                            </>
+                        )}
+                    </TouchableOpacity>
                 </SectionCard>
 
                 {/* Read-only status footer for terminal statuses */}
