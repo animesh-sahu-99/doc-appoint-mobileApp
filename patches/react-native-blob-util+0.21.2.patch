@@ -1,0 +1,475 @@
+diff --git a/node_modules/react-native-blob-util/android/build/generated/source/buildConfig/debug/com/ReactNativeBlobUtil/BuildConfig.java b/node_modules/react-native-blob-util/android/build/generated/source/buildConfig/debug/com/ReactNativeBlobUtil/BuildConfig.java
+new file mode 100644
+index 0000000..2855598
+--- /dev/null
++++ b/node_modules/react-native-blob-util/android/build/generated/source/buildConfig/debug/com/ReactNativeBlobUtil/BuildConfig.java
+@@ -0,0 +1,12 @@
++/**
++ * Automatically generated file. DO NOT MODIFY
++ */
++package com.ReactNativeBlobUtil;
++
++public final class BuildConfig {
++  public static final boolean DEBUG = Boolean.parseBoolean("true");
++  public static final String LIBRARY_PACKAGE_NAME = "com.ReactNativeBlobUtil";
++  public static final String BUILD_TYPE = "debug";
++  // Field from default config.
++  public static final boolean IS_NEW_ARCHITECTURE_ENABLED = false;
++}
+diff --git a/node_modules/react-native-blob-util/android/build/intermediates/aapt_friendly_merged_manifests/debug/aapt/AndroidManifest.xml b/node_modules/react-native-blob-util/android/build/intermediates/aapt_friendly_merged_manifests/debug/aapt/AndroidManifest.xml
+new file mode 100644
+index 0000000..08f9691
+--- /dev/null
++++ b/node_modules/react-native-blob-util/android/build/intermediates/aapt_friendly_merged_manifests/debug/aapt/AndroidManifest.xml
+@@ -0,0 +1,46 @@
++<?xml version="1.0" encoding="utf-8"?>
++<manifest xmlns:android="http://schemas.android.com/apk/res/android"
++    package="com.ReactNativeBlobUtil" >
++
++    <uses-sdk android:minSdkVersion="23" />
++
++    <!-- Required to download files from Google Play -->
++    <uses-permission android:name="android.permission.INTERNET" />
++
++    <!--
++         Required to keep CPU alive while downloading files
++        (NOT to keep screen awake)
++    -->
++    <uses-permission android:name="android.permission.WAKE_LOCK" />
++
++    <!--
++         Required to poll the state of the network connection
++        and respond to changes
++    -->
++    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
++
++    <!-- Required to check whether Wi-Fi is enabled -->
++    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
++
++    <!-- Required to read and write the expansion files on shared storage -->
++    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
++
++    <!-- Required to read and write the expansion files on shared storage for Android 11 -->
++    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
++
++    <!-- Required to to download files without a notification -->
++    <uses-permission android:name="android.permission.DOWNLOAD_WITHOUT_NOTIFICATION" />
++
++    <application>
++        <provider
++            android:name="com.ReactNativeBlobUtil.Utils.FileProvider"
++            android:authorities="dollar_openBracket_applicationId_closeBracket.provider"
++            android:exported="false"
++            android:grantUriPermissions="true" >
++            <meta-data
++                android:name="android.support.FILE_PROVIDER_PATHS"
++                android:resource="@xml/provider_paths" />
++        </provider>
++    </application>
++
++</manifest>
+\ No newline at end of file
+diff --git a/node_modules/react-native-blob-util/android/build/intermediates/aapt_friendly_merged_manifests/debug/aapt/output-metadata.json b/node_modules/react-native-blob-util/android/build/intermediates/aapt_friendly_merged_manifests/debug/aapt/output-metadata.json
+new file mode 100644
+index 0000000..0c85ef1
+--- /dev/null
++++ b/node_modules/react-native-blob-util/android/build/intermediates/aapt_friendly_merged_manifests/debug/aapt/output-metadata.json
+@@ -0,0 +1,18 @@
++{
++  "version": 3,
++  "artifactType": {
++    "type": "AAPT_FRIENDLY_MERGED_MANIFESTS",
++    "kind": "Directory"
++  },
++  "applicationId": "com.ReactNativeBlobUtil",
++  "variantName": "debug",
++  "elements": [
++    {
++      "type": "SINGLE",
++      "filters": [],
++      "attributes": [],
++      "outputFile": "AndroidManifest.xml"
++    }
++  ],
++  "elementType": "File"
++}
+\ No newline at end of file
+diff --git a/node_modules/react-native-blob-util/android/build/intermediates/aar_metadata/debug/aar-metadata.properties b/node_modules/react-native-blob-util/android/build/intermediates/aar_metadata/debug/aar-metadata.properties
+new file mode 100644
+index 0000000..776557e
+--- /dev/null
++++ b/node_modules/react-native-blob-util/android/build/intermediates/aar_metadata/debug/aar-metadata.properties
+@@ -0,0 +1,5 @@
++aarFormatVersion=1.0
++aarMetadataVersion=1.0
++minCompileSdk=1
++minCompileSdkExtension=0
++minAndroidGradlePluginVersion=1.0.0
+diff --git a/node_modules/react-native-blob-util/android/build/intermediates/annotation_processor_list/debug/annotationProcessors.json b/node_modules/react-native-blob-util/android/build/intermediates/annotation_processor_list/debug/annotationProcessors.json
+new file mode 100644
+index 0000000..9e26dfe
+--- /dev/null
++++ b/node_modules/react-native-blob-util/android/build/intermediates/annotation_processor_list/debug/annotationProcessors.json
+@@ -0,0 +1 @@
++{}
+\ No newline at end of file
+diff --git a/node_modules/react-native-blob-util/android/build/intermediates/compile_r_class_jar/debug/R.jar b/node_modules/react-native-blob-util/android/build/intermediates/compile_r_class_jar/debug/R.jar
+new file mode 100644
+index 0000000..3cd94c1
+Binary files /dev/null and b/node_modules/react-native-blob-util/android/build/intermediates/compile_r_class_jar/debug/R.jar differ
+diff --git a/node_modules/react-native-blob-util/android/build/intermediates/compile_symbol_list/debug/R.txt b/node_modules/react-native-blob-util/android/build/intermediates/compile_symbol_list/debug/R.txt
+new file mode 100644
+index 0000000..b892056
+--- /dev/null
++++ b/node_modules/react-native-blob-util/android/build/intermediates/compile_symbol_list/debug/R.txt
+@@ -0,0 +1,2 @@
++int string app_name 0x0
++int xml provider_paths 0x0
+diff --git a/node_modules/react-native-blob-util/android/build/intermediates/compiled_local_resources/debug/out/xml_provider_paths.xml.flat b/node_modules/react-native-blob-util/android/build/intermediates/compiled_local_resources/debug/out/xml_provider_paths.xml.flat
+new file mode 100644
+index 0000000..005c750
+Binary files /dev/null and b/node_modules/react-native-blob-util/android/build/intermediates/compiled_local_resources/debug/out/xml_provider_paths.xml.flat differ
+diff --git a/node_modules/react-native-blob-util/android/build/intermediates/incremental/debug/packageDebugResources/compile-file-map.properties b/node_modules/react-native-blob-util/android/build/intermediates/incremental/debug/packageDebugResources/compile-file-map.properties
+new file mode 100644
+index 0000000..704f265
+--- /dev/null
++++ b/node_modules/react-native-blob-util/android/build/intermediates/incremental/debug/packageDebugResources/compile-file-map.properties
+@@ -0,0 +1,2 @@
++#Thu Apr 02 23:50:30 IST 2026
++com.ReactNativeBlobUtil.react-native-blob-util-main-6\:/xml/provider_paths.xml=D\:\\My Stuff\\New folder\\Projects\\doc-appoint\\doc-appoint-mobileApp\\node_modules\\react-native-blob-util\\android\\build\\intermediates\\packaged_res\\debug\\xml\\provider_paths.xml
+diff --git a/node_modules/react-native-blob-util/android/build/intermediates/incremental/debug/packageDebugResources/merged.dir/values/values.xml b/node_modules/react-native-blob-util/android/build/intermediates/incremental/debug/packageDebugResources/merged.dir/values/values.xml
+new file mode 100644
+index 0000000..4b285a7
+--- /dev/null
++++ b/node_modules/react-native-blob-util/android/build/intermediates/incremental/debug/packageDebugResources/merged.dir/values/values.xml
+@@ -0,0 +1,4 @@
++<?xml version="1.0" encoding="utf-8"?>
++<resources>
++    <string name="app_name">react-native-blob-util</string>
++</resources>
+\ No newline at end of file
+diff --git a/node_modules/react-native-blob-util/android/build/intermediates/incremental/debug/packageDebugResources/merger.xml b/node_modules/react-native-blob-util/android/build/intermediates/incremental/debug/packageDebugResources/merger.xml
+new file mode 100644
+index 0000000..efa893b
+--- /dev/null
++++ b/node_modules/react-native-blob-util/android/build/intermediates/incremental/debug/packageDebugResources/merger.xml
+@@ -0,0 +1,2 @@
++<?xml version="1.0" encoding="utf-8"?>
++<merger version="3"><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="main$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="main" generated-set="main$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\res"><file path="D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\res\values\strings.xml" qualifiers=""><string name="app_name">react-native-blob-util</string></file><file name="provider_paths" path="D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\res\xml\provider_paths.xml" qualifiers="" type="xml"/></source></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="debug$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\debug\res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="debug" generated-set="debug$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\debug\res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="generated$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\build\generated\res\resValues\debug"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="generated" generated-set="generated$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\build\generated\res\resValues\debug"/></dataSet><mergedItems/></merger>
+\ No newline at end of file
+diff --git a/node_modules/react-native-blob-util/android/build/intermediates/local_only_symbol_list/debug/R-def.txt b/node_modules/react-native-blob-util/android/build/intermediates/local_only_symbol_list/debug/R-def.txt
+new file mode 100644
+index 0000000..1e08740
+--- /dev/null
++++ b/node_modules/react-native-blob-util/android/build/intermediates/local_only_symbol_list/debug/R-def.txt
+@@ -0,0 +1,4 @@
++R_DEF: Internal format may change without notice
++local
++string app_name
++xml provider_paths
+diff --git a/node_modules/react-native-blob-util/android/build/intermediates/manifest_merge_blame_file/debug/manifest-merger-blame-debug-report.txt b/node_modules/react-native-blob-util/android/build/intermediates/manifest_merge_blame_file/debug/manifest-merger-blame-debug-report.txt
+new file mode 100644
+index 0000000..50fec1d
+--- /dev/null
++++ b/node_modules/react-native-blob-util/android/build/intermediates/manifest_merge_blame_file/debug/manifest-merger-blame-debug-report.txt
+@@ -0,0 +1,69 @@
++1<?xml version="1.0" encoding="utf-8"?>
++2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
++3    package="com.ReactNativeBlobUtil" >
++4
++5    <uses-sdk android:minSdkVersion="23" />
++6
++7    <!-- Required to download files from Google Play -->
++8    <uses-permission android:name="android.permission.INTERNET" />
++8-->D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:4:5-67
++8-->D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:4:22-64
++9
++10    <!--
++11         Required to keep CPU alive while downloading files
++12        (NOT to keep screen awake)
++13    -->
++14    <uses-permission android:name="android.permission.WAKE_LOCK" />
++14-->D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:8:5-68
++14-->D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:8:22-65
++15
++16    <!--
++17         Required to poll the state of the network connection
++18        and respond to changes
++19    -->
++20    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
++20-->D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:12:5-79
++20-->D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:12:22-76
++21
++22    <!-- Required to check whether Wi-Fi is enabled -->
++23    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
++23-->D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:15:5-76
++23-->D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:15:22-73
++24
++25    <!-- Required to read and write the expansion files on shared storage -->
++26    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
++26-->D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:18:5-81
++26-->D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:18:22-78
++27
++28    <!-- Required to read and write the expansion files on shared storage for Android 11 -->
++29    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
++29-->D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:21:5-80
++29-->D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:21:22-77
++30
++31    <!-- Required to to download files without a notification -->
++32    <uses-permission android:name="android.permission.DOWNLOAD_WITHOUT_NOTIFICATION" />
++32-->D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:24:5-87
++32-->D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:24:22-85
++33
++34    <application>
++34-->D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:26:5-36:19
++35        <provider
++35-->D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:27:9-35:20
++36            android:name="com.ReactNativeBlobUtil.Utils.FileProvider"
++36-->D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:28:13-70
++37            android:authorities="${applicationId}.provider"
++37-->D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:29:13-60
++38            android:exported="false"
++38-->D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:30:13-37
++39            android:grantUriPermissions="true" >
++39-->D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:31:13-47
++40            <meta-data
++40-->D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:32:13-34:58
++41                android:name="android.support.FILE_PROVIDER_PATHS"
++41-->D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:33:17-67
++42                android:resource="@xml/provider_paths" />
++42-->D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:34:17-55
++43        </provider>
++44    </application>
++45
++46</manifest>
+diff --git a/node_modules/react-native-blob-util/android/build/intermediates/merged_manifest/debug/AndroidManifest.xml b/node_modules/react-native-blob-util/android/build/intermediates/merged_manifest/debug/AndroidManifest.xml
+new file mode 100644
+index 0000000..be89a69
+--- /dev/null
++++ b/node_modules/react-native-blob-util/android/build/intermediates/merged_manifest/debug/AndroidManifest.xml
+@@ -0,0 +1,46 @@
++<?xml version="1.0" encoding="utf-8"?>
++<manifest xmlns:android="http://schemas.android.com/apk/res/android"
++    package="com.ReactNativeBlobUtil" >
++
++    <uses-sdk android:minSdkVersion="23" />
++
++    <!-- Required to download files from Google Play -->
++    <uses-permission android:name="android.permission.INTERNET" />
++
++    <!--
++         Required to keep CPU alive while downloading files
++        (NOT to keep screen awake)
++    -->
++    <uses-permission android:name="android.permission.WAKE_LOCK" />
++
++    <!--
++         Required to poll the state of the network connection
++        and respond to changes
++    -->
++    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
++
++    <!-- Required to check whether Wi-Fi is enabled -->
++    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
++
++    <!-- Required to read and write the expansion files on shared storage -->
++    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
++
++    <!-- Required to read and write the expansion files on shared storage for Android 11 -->
++    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
++
++    <!-- Required to to download files without a notification -->
++    <uses-permission android:name="android.permission.DOWNLOAD_WITHOUT_NOTIFICATION" />
++
++    <application>
++        <provider
++            android:name="com.ReactNativeBlobUtil.Utils.FileProvider"
++            android:authorities="${applicationId}.provider"
++            android:exported="false"
++            android:grantUriPermissions="true" >
++            <meta-data
++                android:name="android.support.FILE_PROVIDER_PATHS"
++                android:resource="@xml/provider_paths" />
++        </provider>
++    </application>
++
++</manifest>
+\ No newline at end of file
+diff --git a/node_modules/react-native-blob-util/android/build/intermediates/navigation_json/debug/navigation.json b/node_modules/react-native-blob-util/android/build/intermediates/navigation_json/debug/navigation.json
+new file mode 100644
+index 0000000..0637a08
+--- /dev/null
++++ b/node_modules/react-native-blob-util/android/build/intermediates/navigation_json/debug/navigation.json
+@@ -0,0 +1 @@
++[]
+\ No newline at end of file
+diff --git a/node_modules/react-native-blob-util/android/build/intermediates/packaged_res/debug/values/values.xml b/node_modules/react-native-blob-util/android/build/intermediates/packaged_res/debug/values/values.xml
+new file mode 100644
+index 0000000..4b285a7
+--- /dev/null
++++ b/node_modules/react-native-blob-util/android/build/intermediates/packaged_res/debug/values/values.xml
+@@ -0,0 +1,4 @@
++<?xml version="1.0" encoding="utf-8"?>
++<resources>
++    <string name="app_name">react-native-blob-util</string>
++</resources>
+\ No newline at end of file
+diff --git a/node_modules/react-native-blob-util/android/build/intermediates/packaged_res/debug/xml/provider_paths.xml b/node_modules/react-native-blob-util/android/build/intermediates/packaged_res/debug/xml/provider_paths.xml
+new file mode 100644
+index 0000000..c38617d
+--- /dev/null
++++ b/node_modules/react-native-blob-util/android/build/intermediates/packaged_res/debug/xml/provider_paths.xml
+@@ -0,0 +1,12 @@
++<?xml version="1.0" encoding="utf-8"?>
++<paths xmlns:android="http://schemas.android.com/apk/res/android">
++    <external-path
++        name="external_files"
++        path="." />
++    <files-path
++        name="files-path"
++        path="." /> <!-- Used to access into application data files -->
++    <cache-path
++        name="cache-path"
++        path="." /> <!-- Used to access files in cache directory -->
++</paths>
+diff --git a/node_modules/react-native-blob-util/android/build/intermediates/symbol_list_with_package_name/debug/package-aware-r.txt b/node_modules/react-native-blob-util/android/build/intermediates/symbol_list_with_package_name/debug/package-aware-r.txt
+new file mode 100644
+index 0000000..e24256f
+--- /dev/null
++++ b/node_modules/react-native-blob-util/android/build/intermediates/symbol_list_with_package_name/debug/package-aware-r.txt
+@@ -0,0 +1,3 @@
++com.ReactNativeBlobUtil
++string app_name
++xml provider_paths
+diff --git a/node_modules/react-native-blob-util/android/build/outputs/logs/manifest-merger-debug-report.txt b/node_modules/react-native-blob-util/android/build/outputs/logs/manifest-merger-debug-report.txt
+new file mode 100644
+index 0000000..f591406
+--- /dev/null
++++ b/node_modules/react-native-blob-util/android/build/outputs/logs/manifest-merger-debug-report.txt
+@@ -0,0 +1,63 @@
++-- Merging decision tree log ---
++manifest
++ADDED from D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:1:1-38:12
++INJECTED from D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:1:1-38:12
++	package
++		ADDED from D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:1:70-103
++		INJECTED from D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml
++	xmlns:android
++		ADDED from D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:1:11-69
++uses-permission#android.permission.INTERNET
++ADDED from D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:4:5-67
++	android:name
++		ADDED from D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:4:22-64
++uses-permission#android.permission.WAKE_LOCK
++ADDED from D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:8:5-68
++	android:name
++		ADDED from D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:8:22-65
++uses-permission#android.permission.ACCESS_NETWORK_STATE
++ADDED from D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:12:5-79
++	android:name
++		ADDED from D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:12:22-76
++uses-permission#android.permission.ACCESS_WIFI_STATE
++ADDED from D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:15:5-76
++	android:name
++		ADDED from D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:15:22-73
++uses-permission#android.permission.WRITE_EXTERNAL_STORAGE
++ADDED from D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:18:5-81
++	android:name
++		ADDED from D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:18:22-78
++uses-permission#android.permission.READ_EXTERNAL_STORAGE
++ADDED from D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:21:5-80
++	android:name
++		ADDED from D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:21:22-77
++uses-permission#android.permission.DOWNLOAD_WITHOUT_NOTIFICATION
++ADDED from D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:24:5-87
++	android:name
++		ADDED from D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:24:22-85
++application
++ADDED from D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:26:5-36:19
++provider#com.ReactNativeBlobUtil.Utils.FileProvider
++ADDED from D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:27:9-35:20
++	android:grantUriPermissions
++		ADDED from D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:31:13-47
++	android:authorities
++		ADDED from D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:29:13-60
++	android:exported
++		ADDED from D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:30:13-37
++	android:name
++		ADDED from D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:28:13-70
++meta-data#android.support.FILE_PROVIDER_PATHS
++ADDED from D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:32:13-34:58
++	android:resource
++		ADDED from D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:34:17-55
++	android:name
++		ADDED from D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml:33:17-67
++uses-sdk
++INJECTED from D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml reason: use-sdk injection requested
++INJECTED from D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml
++INJECTED from D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml
++	android:targetSdkVersion
++		INJECTED from D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml
++	android:minSdkVersion
++		INJECTED from D:\My Stuff\New folder\Projects\doc-appoint\doc-appoint-mobileApp\node_modules\react-native-blob-util\android\src\main\AndroidManifest.xml
+diff --git a/node_modules/react-native-blob-util/android/src/main/java/com/ReactNativeBlobUtil/ReactNativeBlobUtilPackage.java b/node_modules/react-native-blob-util/android/src/main/java/com/ReactNativeBlobUtil/ReactNativeBlobUtilPackage.java
+index 779c17f..34dc077 100644
+--- a/node_modules/react-native-blob-util/android/src/main/java/com/ReactNativeBlobUtil/ReactNativeBlobUtilPackage.java
++++ b/node_modules/react-native-blob-util/android/src/main/java/com/ReactNativeBlobUtil/ReactNativeBlobUtilPackage.java
+@@ -2,46 +2,27 @@ package com.ReactNativeBlobUtil;
+ 
+ import androidx.annotation.Nullable;
+ 
+-import com.facebook.react.BaseReactPackage;
++import com.facebook.react.ReactPackage;
+ import com.facebook.react.bridge.NativeModule;
+ import com.facebook.react.bridge.ReactApplicationContext;
+-import com.facebook.react.module.model.ReactModuleInfo;
+-import com.facebook.react.module.model.ReactModuleInfoProvider;
++import com.facebook.react.uimanager.ViewManager;
+ 
+-import java.util.HashMap;
+-import java.util.Map;
++import java.util.ArrayList;
++import java.util.Collections;
++import java.util.List;
+ 
+-// trick autolinking till it is fixed on RN side
+-//public class ReactNativeBlobUtilPackage extends TurboReactPackage {
+-public class ReactNativeBlobUtilPackage extends BaseReactPackage {
++public class ReactNativeBlobUtilPackage implements ReactPackage {
+ 
+-    @Nullable
+     @Override
+-    public NativeModule getModule(String name, ReactApplicationContext reactContext) {
+-        if (name.equals(ReactNativeBlobUtilImpl.NAME)) {
+-            return new ReactNativeBlobUtil(reactContext);
+-        } else {
+-            return null;
+-        }
++    public List<NativeModule> createNativeModules(ReactApplicationContext reactContext) {
++        List<NativeModule> modules = new ArrayList<>();
++        modules.add(new ReactNativeBlobUtil(reactContext));
++        return modules;
+     }
+ 
+     @Override
+-    public ReactModuleInfoProvider getReactModuleInfoProvider() {
+-        return () -> {
+-            final Map<String, ReactModuleInfo> moduleInfos = new HashMap<>();
+-            boolean isTurboModule = BuildConfig.IS_NEW_ARCHITECTURE_ENABLED;
+-            moduleInfos.put(
+-                    ReactNativeBlobUtilImpl.NAME,
+-                    new ReactModuleInfo(
+-                            ReactNativeBlobUtilImpl.NAME,
+-                            ReactNativeBlobUtilImpl.NAME,
+-                            false, // canOverrideExistingModule
+-                            false, // needsEagerInit
+-                            false, // isCxxModule
+-                            isTurboModule // isTurboModule
+-                    ));
+-            return moduleInfos;
+-        };
++    public List<ViewManager> createViewManagers(ReactApplicationContext reactContext) {
++        return Collections.emptyList();
+     }
+ 
+ }

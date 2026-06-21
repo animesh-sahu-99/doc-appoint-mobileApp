@@ -3,7 +3,7 @@ import { markSessionExpired } from '../store/slices/authSlice';
 
 const baseQuery = fetchBaseQuery({
   // Use the machine's local IP address instead of 10.0.2.2 for physical device testing
-  baseUrl: 'http://192.168.5.91:9091/api/',
+  baseUrl: 'http://192.168.5.92:9091/api/',
   prepareHeaders: (headers, { getState }) => {
     // By default, if we have a token in the store, let's use that for authenticated requests
     const token = (getState() as any).auth.token;

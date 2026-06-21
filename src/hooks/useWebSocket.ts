@@ -15,7 +15,7 @@ if (typeof global.TextDecoder === 'undefined') {
   global.TextDecoder = TextEncoding.TextDecoder;
 }
 
-const WS_URL = 'ws://192.168.5.91:9091/ws-endpoint';
+const WS_URL = 'ws://192.168.5.92:9091/ws-endpoint';
 
 export const useWebSocket = () => {
   const dispatch = useDispatch();
