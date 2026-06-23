@@ -34,3 +34,6 @@ Thumbs.db
 
 # Testing
 coverage/
+
+# Lock file
+package-lock.json
