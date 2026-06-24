@@ -1,9 +1,13 @@
 # Dependencies
 node_modules/
 
-# React Native
-android/
-ios/
+# React Native build artifacts
+android/.gradle/
+android/app/build/
+android/build/
+
+ios/build/
+ios/Pods/
 
 # Metro
 .metro-health-check*
