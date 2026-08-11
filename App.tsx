@@ -9,16 +9,21 @@ import RootNavigator from './src/navigation/RootNavigator';
 import Toast from 'react-native-toast-message';
 import { useWebSocket } from './src/hooks/useWebSocket';
 import { usePushNotifications } from './src/hooks/usePushNotifications';
-import { logout } from './src/store/slices/authSlice';
+import { useSessionRefresh } from './src/hooks/useSessionRefresh';
+import { clearSessionExpired } from './src/store/slices/authSlice';
 
 const GlobalServices = ({ navRef }: { navRef: React.RefObject<NavigationContainerRef<any>> }) => {
+  // Runs first: rotates a token that expired while the app was closed or backgrounded, so the
+  // WebSocket below connects with a live one.
+  useSessionRefresh();
   useWebSocket();
   usePushNotifications(navRef);
   return null;
 };
 
-// Watches for 401 session expiry and shows an alert, then resets to Login
-const SessionGuard = ({ navRef }: { navRef: React.RefObject<NavigationContainerRef<any>> }) => {
+// Prompts the user after a refresh attempt has genuinely failed. With silent refresh in place
+// this should be rare — a dead refresh token, not merely an expired access token.
+const SessionGuard = () => {
   const sessionExpired = useSelector((s: any) => s.auth.sessionExpired);
   const dispatch = useDispatch();
   const hasShownAlert = useRef(false);
@@ -33,15 +38,16 @@ const SessionGuard = ({ navRef }: { navRef: React.RefObject<NavigationContainerR
           text: 'OK',
           onPress: () => {
             hasShownAlert.current = false;
-            dispatch(logout());
-            // Navigate to Login — resets the entire navigation stack
-            navRef.current?.reset({ index: 0, routes: [{ name: 'Login' as never }] });
+            // markSessionExpired() already cleared the credentials, and RootNavigator has
+            // already swapped to the Auth stack reactively — only the flag is left to lower.
+            // (The old reset() here targeted 'Login', which is not a root-stack route.)
+            dispatch(clearSessionExpired());
           },
         }],
         { cancelable: false }
       );
     }
-  }, [sessionExpired, dispatch, navRef]);
+  }, [sessionExpired, dispatch]);
 
   return null;
 };
@@ -55,7 +61,7 @@ export default function App() {
         <SafeAreaProvider>
           <GlobalServices navRef={navRef} />
           <NavigationContainer ref={navRef}>
-            <SessionGuard navRef={navRef} />
+            <SessionGuard />
             <RootNavigator />
           </NavigationContainer>
           <Toast />

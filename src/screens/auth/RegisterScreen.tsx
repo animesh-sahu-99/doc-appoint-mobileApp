@@ -3,11 +3,9 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert, Modal } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useDispatch } from 'react-redux';
 import { User, Stethoscope, Mail, Lock, Eye, EyeOff, Activity, ArrowLeft, ChevronDown, Phone } from 'lucide-react-native';
 import { patientRegisterSchema, doctorRegisterSchema, PatientRegisterFormData, DoctorRegisterFormData } from '../../utils/validation';
-import { setCredentials, UserRole } from '../../store/slices/authSlice';
-import { storage } from '../../utils/storage';
+import { UserRole } from '../../store/slices/authSlice';
 import PrimaryButton from '../../components/ui/PrimaryButton';
 import { twMerge } from 'tailwind-merge';
 import { useDoctorRegisterMutation, usePatientRegisterMutation } from '../../services/api';
@@ -105,7 +103,6 @@ const RegisterScreen = () => {
 };
 
 const PatientForm = () => {
-    const dispatch = useDispatch();
     const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -151,7 +148,6 @@ const PatientForm = () => {
 };
 
 const DoctorForm = () => {
-    const dispatch = useDispatch();
     const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);

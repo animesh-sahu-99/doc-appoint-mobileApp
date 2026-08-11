@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, Alert, Platform } from 'react-native';
-import { useGetAppointmentDocumentsQuery, useDeleteAppointmentDocumentMutation } from '../../services/api';
+import {
+  useGetAppointmentDocumentsQuery,
+  useDeleteAppointmentDocumentMutation,
+  ensureFreshToken,
+} from '../../services/api';
 import RNBlobUtil from 'react-native-blob-util';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../store/store';
+import { useDispatch, useStore } from 'react-redux';
 import { FileText, FileImage, Trash2, Download } from 'lucide-react-native';
 import { colors } from '../../theme/colors';
 
@@ -12,10 +15,23 @@ interface DocumentListProps {
   currentUserId: string;
 }
 
+/**
+ * RNBlobUtil resolves successfully for any HTTP status and saves whatever came back. Without
+ * this check a 401 or 500 error body is written to disk under the document's name and then
+ * handed to the OS as a PDF.
+ */
+function assertDownloadSucceeded(res: any) {
+  const status = res?.info?.()?.status;
+  if (typeof status === 'number' && status >= 400) {
+    throw new Error(`Download failed with HTTP ${status}`);
+  }
+}
+
 export function DocumentList({ appointmentId, currentUserId }: DocumentListProps) {
   const { data: response, isLoading } = useGetAppointmentDocumentsQuery(appointmentId);
   const [deleteDoc, { isLoading: isDeleting }] = useDeleteAppointmentDocumentMutation();
-  const token = useSelector((state: RootState) => state.auth.token);
+  const dispatch = useDispatch();
+  const store = useStore();
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const docs = response?.data || [];
@@ -23,6 +39,14 @@ export function DocumentList({ appointmentId, currentUserId }: DocumentListProps
   const handleDownloadAndOpen = async (doc: any) => {
     try {
       setDownloadingId(doc.documentId);
+
+      // This request bypasses RTK Query, so it gets no 401-retry — fetch a token that is
+      // known-good up front instead.
+      const token = await ensureFreshToken(dispatch, store.getState as () => any);
+      if (!token) {
+        Alert.alert('Download Failed', 'Your session has expired. Please log in again.');
+        return;
+      }
 
       // Sanitize filename: remove spaces and unsafe characters
       const safeFileName = doc.fileName.replace(/[^a-zA-Z0-9.\-_]/g, '_');
@@ -46,6 +70,10 @@ export function DocumentList({ appointmentId, currentUserId }: DocumentListProps
             Authorization: `Bearer ${token}`,
           })
           .then(res => {
+            // RNBlobUtil does not throw on an error status — it writes the JSON error body to
+            // disk under the document's filename. Check explicitly, or the user "downloads" a
+            // PDF that is really a 401 payload.
+            assertDownloadSucceeded(res);
             // Trigger the system "Open With" chooser for this file
             RNBlobUtil.android.actionViewIntent(res.path(), mimeType);
           });
@@ -56,6 +84,7 @@ export function DocumentList({ appointmentId, currentUserId }: DocumentListProps
           .fetch('GET', doc.downloadUrl, {
             Authorization: `Bearer ${token}`,
           });
+        assertDownloadSucceeded(res);
         await RNBlobUtil.ios.openDocument(res.path());
       }
     } catch (error: any) {

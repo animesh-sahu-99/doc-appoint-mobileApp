@@ -2,9 +2,9 @@ import { useEffect, useRef, useCallback } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import { Client } from '@stomp/stompjs';
 import * as TextEncoding from 'text-encoding';
-import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '../store';
-import { api } from '../services/api';
+import { useDispatch, useSelector, useStore } from 'react-redux';
+import { RootState } from '../store/store';
+import { api, API_BASE_URL, forceTokenRefresh } from '../services/api';
 import Toast from 'react-native-toast-message';
 
 // Make TextEncoder available globally for stompjs in React Native
@@ -15,10 +15,12 @@ if (typeof global.TextDecoder === 'undefined') {
   global.TextDecoder = TextEncoding.TextDecoder;
 }
 
-const WS_URL = 'ws://192.168.5.92:9091/ws-endpoint';
+// Derived from the REST base URL so there is only one host to change.
+const WS_URL = API_BASE_URL.replace(/^http/, 'ws').replace(/\/api\/?$/, '/ws-endpoint');
 
 export const useWebSocket = () => {
   const dispatch = useDispatch();
+  const store = useStore();
   const token = useSelector((state: RootState) => state.auth.token);
   const user = useSelector((state: RootState) => state.auth.user);
   const clientRef = useRef<Client | null>(null);
@@ -82,7 +84,21 @@ export const useWebSocket = () => {
     };
 
     client.onStompError = (frame) => {
-      console.error('[WS] ❌ STOMP error:', frame.headers['message'], frame.body);
+      const reason = frame.headers['message'] || '';
+      console.error('[WS] ❌ STOMP error:', reason, frame.body);
+
+      // A rejected CONNECT is usually an expired access token. STOMP would otherwise retry
+      // every 5s forever with the same dead credential and notifications would silently stop.
+      // Refreshing re-keys the effect below (which depends on `token`), reconnecting us.
+      const normalized = reason.toLowerCase();
+      if (
+        normalized.includes('token_expired') ||
+        normalized.includes('unauthor') ||
+        normalized.includes('expired')
+      ) {
+        console.warn('[WS] 🔑 STOMP auth failure — forcing token refresh.');
+        forceTokenRefresh(dispatch, store.getState as () => any);
+      }
     };
 
     client.onWebSocketClose = (event) => {
@@ -104,7 +120,7 @@ export const useWebSocket = () => {
 
     client.activate();
     clientRef.current = client;
-  }, [token, user, dispatch]);
+  }, [token, user, dispatch, store]);
 
   // ── AppState listener: re-connect when app comes back to foreground ─────────
   useEffect(() => {

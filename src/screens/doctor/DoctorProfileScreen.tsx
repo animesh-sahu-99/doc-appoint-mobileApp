@@ -8,7 +8,7 @@ import {
     Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
 import {
     User,
     Stethoscope,
@@ -21,12 +21,12 @@ import {
     ChevronRight,
 } from 'lucide-react-native';
 import { useGetDoctorProfileQuery } from '../../services/api';
-import { logout } from '../../store/slices/authSlice';
+import { useLogout } from '../../hooks/useLogout';
 import { colors } from '../../theme/colors';
 
 export default function DoctorProfileScreen({ navigation }: any) {
     const user = useSelector((s: any) => s.auth.user);
-    const dispatch = useDispatch();
+    const performLogout = useLogout();
     const doctorId: string = user?.doctorId ?? user?.id ?? '';
 
     const { data, isLoading } = useGetDoctorProfileQuery(doctorId, { skip: !doctorId });
@@ -38,7 +38,7 @@ export default function DoctorProfileScreen({ navigation }: any) {
             {
                 text: 'Sign Out',
                 style: 'destructive',
-                onPress: () => dispatch(logout()),
+                onPress: () => { performLogout(); },
             },
         ]);
     };

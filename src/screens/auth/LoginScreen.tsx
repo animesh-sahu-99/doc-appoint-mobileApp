@@ -7,7 +7,6 @@ import { useDispatch } from 'react-redux';
 import { User, Stethoscope, Mail, Lock, Eye, EyeOff, ArrowRight, Activity } from 'lucide-react-native';
 import { loginSchema, LoginFormData } from '../../utils/validation';
 import { setCredentials, UserRole } from '../../store/slices/authSlice';
-import { storage } from '../../utils/storage';
 import PrimaryButton from '../../components/ui/PrimaryButton';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -47,7 +46,7 @@ const LoginScreen = () => {
       console.log('Login Response:', response);
 
       if (response && response.success && response.data) {
-        const { token, userId, email, name } = response.data;
+        const { token, refreshToken, expiresIn, userId, email, name } = response.data;
 
         // Build a normalized user object from the flat AuthResponse fields.
         // doctorId / patientId both map to userId coming from the backend.
@@ -59,9 +58,13 @@ const LoginScreen = () => {
           name,
         };
 
+        // `role` stays the locally-selected toggle, not response.data.role — the backend
+        // returns ROLE_DOCTOR/ROLE_PATIENT while navigation keys off DOCTOR/PATIENT.
         dispatch(setCredentials({
           user: userObj,
           token: token,
+          refreshToken: refreshToken ?? null,
+          expiresIn: expiresIn ?? null,
           role: role,
         }));
       } else {
